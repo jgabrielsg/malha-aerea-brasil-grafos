@@ -1,0 +1,5 @@
+.vscode
+static/parquets/
+data/
+*.parquet
+*.csv
