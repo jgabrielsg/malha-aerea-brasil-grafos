@@ -46,4 +46,5 @@ pnpm-debug.log*
 *.swp
 
 AGENTS.md
-ROADMAP.md
+ROADMAP.mdbuild/
+.svelte-kit/
