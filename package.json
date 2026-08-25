@@ -1,0 +1,35 @@
+{
+  "name": "geoflight-br",
+  "version": "1.0.0",
+  "private": true,
+  "description": "GeoFlight-BR: Painel de Análise Topológica da Malha Aérea Brasileira (2000-2026)",
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev --host",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@sveltejs/adapter-static": "^3.0.8",
+    "@sveltejs/kit": "^2.16.1",
+    "@sveltejs/vite-plugin-svelte": "^5.0.3",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.5.1",
+    "svelte": "^5.19.7",
+    "tailwindcss": "^3.4.17",
+    "vite": "^6.0.11"
+  },
+  "dependencies": {
+    "@deck.gl/core": "^9.0.38",
+    "@deck.gl/geo-layers": "^9.0.38",
+    "@deck.gl/layers": "^9.0.38",
+    "@deck.gl/mapbox": "^9.0.38",
+    "@lucide/svelte": "^1.16.0",
+    "clsx": "^2.1.1",
+    "d3-format": "^3.1.0",
+    "d3-interpolate": "^3.0.1",
+    "d3-scale": "^4.0.2",
+    "maplibre-gl": "^5.0.1",
+    "tailwind-merge": "^3.0.1"
+  }
+}
