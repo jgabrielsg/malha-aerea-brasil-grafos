@@ -24,7 +24,6 @@
     "@deck.gl/geo-layers": "^9.0.38",
     "@deck.gl/layers": "^9.0.38",
     "@deck.gl/mapbox": "^9.0.38",
-    "@lucide/svelte": "^1.16.0",
     "clsx": "^2.1.1",
     "d3-format": "^3.1.0",
     "d3-interpolate": "^3.0.1",
