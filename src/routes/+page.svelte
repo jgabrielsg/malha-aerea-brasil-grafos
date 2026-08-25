@@ -6,8 +6,10 @@
   import SearchBox from '$lib/components/SearchBox.svelte';
   import AirportPanel from '$lib/components/AirportPanel.svelte';
   import GapInspector from '$lib/components/GapInspector.svelte';
+  import ResiliencePanel from '$lib/components/ResiliencePanel.svelte';
+  import StoryMode from '$lib/components/StoryMode.svelte';
   import { isLoading, loadError } from '$lib/stores/dataStore.js';
-  import { selectedAirport } from '$lib/stores/flightState.js';
+  import { selectedAirport, isResilienceMode, isStoryMode } from '$lib/stores/flightState.js';
   import Icon from '$lib/icons/Icon.svelte';
 
   let isGapInspectorOpen = $state(false);
@@ -49,27 +51,39 @@
         </div>
       {/if}
 
-      <!-- Painel Flutuante Superior: Linha do Tempo e Busca -->
-      <div class="absolute top-4 left-4 right-4 sm:right-auto sm:w-[460px] z-30 flex flex-col gap-2.5 pointer-events-none">
-        <!-- Campo de Busca -->
-        <div class="pointer-events-auto">
-          <SearchBox />
-        </div>
+      <!-- Painel Flutuante Superior: Linha do Tempo e Busca (ocultos no Modo História para dar foco total à narrativa) -->
+      {#if !$isStoryMode}
+        <div class="absolute top-4 left-4 right-4 sm:right-auto sm:w-[460px] z-30 flex flex-col gap-2.5 pointer-events-none">
+          <!-- Campo de Busca -->
+          <div class="pointer-events-auto">
+            <SearchBox />
+          </div>
 
-        <!-- Controlador Temporal (Timeline) -->
-        <div class="pointer-events-auto">
-          <TimelineController />
+          <!-- Controlador Temporal (Timeline) -->
+          <div class="pointer-events-auto">
+            <TimelineController />
+          </div>
         </div>
-      </div>
+      {/if}
 
       <!-- Card / Botão do Inspetor de Desertos de Rota (Flutuante inferior esquerdo) -->
-      <div class="absolute bottom-4 left-4 z-30 pointer-events-auto">
-        <GapInspector bind:isOpen={isGapInspectorOpen} />
-      </div>
+      {#if !$isStoryMode && !$isResilienceMode}
+        <div class="absolute bottom-4 left-4 z-30 pointer-events-auto">
+          <GapInspector bind:isOpen={isGapInspectorOpen} />
+        </div>
+      {/if}
+
+      <!-- Modal de Narrativa Histórica Guiada (Story Mode) -->
+      {#if $isStoryMode}
+        <StoryMode />
+      {/if}
     </div>
 
-    <!-- Painel Lateral Retrátil de Detalhes do Aeroporto (Ego-Graph) -->
-    {#if $selectedAirport}
+    <!-- Painel Lateral: Simulação de Resiliência (What-If) -->
+    {#if $isResilienceMode}
+      <ResiliencePanel />
+    {:else if $selectedAirport}
+      <!-- Painel Lateral Retrátil de Detalhes do Aeroporto (Ego-Graph) -->
       <AirportPanel />
     {/if}
   </main>

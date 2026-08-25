@@ -7,7 +7,14 @@
     metricMode, 
     theme, 
     cameraTarget, 
-    hoveredObject 
+    hoveredObject,
+    isResilienceMode,
+    simulatedClosedAirport,
+    resilienceResults,
+    isStoryMode,
+    currentStoryIndex,
+    STORY_CHAPTERS,
+    enableFlowAnimation
   } from '$lib/stores/flightState.js';
   import { 
     activeYearAirports, 
@@ -18,6 +25,8 @@
   let mapContainer;
   let mapInstance = null;
   let deckOverlay = null;
+  let animationFrameId = null;
+  let flowTime = 0;
 
   let maplibregl = null;
   let MapboxOverlay = null;
@@ -33,30 +42,42 @@
   // Cores Temáticas
   const COLOR_PALETTES = {
     dark: {
-      arcDefault: [56, 189, 248, 65],
-      arcDimmed: [51, 65, 85, 8],
-      arcSelectedOut: [245, 158, 11, 230],
-      arcSelectedIn: [56, 189, 248, 230],
+      arcDefault: [56, 189, 248, 70],
+      arcDimmed: [51, 65, 85, 6],
+      arcSelectedOut: [245, 158, 11, 240],
+      arcSelectedIn: [56, 189, 248, 240],
       arcGap: [16, 185, 129, 255],
+      arcDisrupted: [239, 68, 68, 180],
+      arcSurviving: [56, 189, 248, 90],
+      arcPulse: [255, 255, 255, 200],
       nodeDefault: [56, 189, 248, 200],
       nodeHub: [245, 158, 11, 240],
-      nodeDimmed: [71, 85, 105, 40],
+      nodeDimmed: [71, 85, 105, 30],
       nodeSelected: [245, 158, 11, 255],
       nodeConnected: [56, 189, 248, 240],
-      nodeGap: [16, 185, 129, 255]
+      nodeGap: [16, 185, 129, 255],
+      nodeClosed: [239, 68, 68, 255],
+      nodeIsolated: [244, 63, 94, 255],
+      nodeStory: [56, 189, 248, 255]
     },
     light: {
-      arcDefault: [19, 81, 180, 75],
+      arcDefault: [19, 81, 180, 80],
       arcDimmed: [203, 213, 225, 15],
-      arcSelectedOut: [234, 88, 12, 230],
-      arcSelectedIn: [19, 81, 180, 230],
+      arcSelectedOut: [234, 88, 12, 240],
+      arcSelectedIn: [19, 81, 180, 240],
       arcGap: [22, 136, 33, 255],
+      arcDisrupted: [220, 38, 38, 180],
+      arcSurviving: [19, 81, 180, 100],
+      arcPulse: [12, 74, 110, 220],
       nodeDefault: [19, 81, 180, 200],
       nodeHub: [234, 88, 12, 240],
-      nodeDimmed: [203, 213, 225, 60],
+      nodeDimmed: [203, 213, 225, 50],
       nodeSelected: [234, 88, 12, 255],
       nodeConnected: [19, 81, 180, 240],
-      nodeGap: [22, 136, 33, 255]
+      nodeGap: [22, 136, 33, 255],
+      nodeClosed: [220, 38, 38, 255],
+      nodeIsolated: [225, 29, 72, 255],
+      nodeStory: [19, 81, 180, 255]
     }
   };
 
@@ -66,6 +87,10 @@
     // Tooltip de Aeroporto (ScatterplotLayer)
     if (object.icao) {
       const isCapital = object.is_capital ? '<span style="color:#f59e0b;font-weight:bold;margin-left:4px;">● CAPITAL</span>' : '';
+      const isClosed = $simulatedClosedAirport === object.icao ? '<span style="color:#ef4444;font-weight:bold;margin-left:4px;">[INTERDITADO]</span>' : '';
+      const isIsolated = $resilienceResults?.isolatedAirports?.some(a => a.icao === object.icao) 
+        ? '<span style="color:#f43f5e;font-weight:bold;margin-left:4px;">[ISOLADO]</span>' : '';
+      
       const iata = object.iata ? `<span style="opacity:0.8;font-size:11px;">(${object.iata})</span>` : '';
       const strength = object.metrics?.strength?.toLocaleString('pt-BR') || 0;
       const degree = object.metrics?.degree || 0;
@@ -74,8 +99,8 @@
       return {
         html: `
           <div style="font-family: Inter, system-ui, sans-serif; padding: 6px 8px; font-size: 12px; line-height: 1.4;">
-            <div style="font-family: 'JetBrains Mono', monospace; font-weight: bold; font-size: 13px; color: #38bdf8;">
-              ${object.icao} ${iata} ${isCapital}
+            <div style="font-family: 'JetBrains Mono', monospace; font-weight: bold; font-size: 13px; color: ${isClosed ? '#ef4444' : isIsolated ? '#f43f5e' : '#38bdf8'};">
+              ${object.icao} ${iata} ${isCapital} ${isClosed} ${isIsolated}
             </div>
             <div style="font-weight: 600; color: #ffffff; margin-top: 2px;">${object.name || ''}</div>
             <div style="color: #94a3b8; font-size: 11px;">${object.city || ''}, ${object.state || object.country}</div>
@@ -106,11 +131,13 @@
       const pax = object.pax?.toLocaleString('pt-BR') || 0;
       const dist = object.dist_km ? `${Math.round(object.dist_km).toLocaleString('pt-BR')} km` : '';
 
+      const isDisrupted = $simulatedClosedAirport && (object.orig === $simulatedClosedAirport || object.dest === $simulatedClosedAirport);
+
       return {
         html: `
           <div style="font-family: Inter, system-ui, sans-serif; padding: 6px 8px; font-size: 12px; line-height: 1.4;">
-            <div style="font-family: 'JetBrains Mono', monospace; font-weight: bold; font-size: 13px; color: #38bdf8;">
-              ${object.orig} ${origCity} ➔ ${object.dest} ${destCity}
+            <div style="font-family: 'JetBrains Mono', monospace; font-weight: bold; font-size: 13px; color: ${isDisrupted ? '#ef4444' : '#38bdf8'};">
+              ${object.orig} ${origCity} ➔ ${object.dest} ${destCity} ${isDisrupted ? '<span style="color:#ef4444;font-size:10px;">[ROMPIDA]</span>' : ''}
             </div>
             <div style="margin-top: 6px; padding-top: 4px; border-top: 1px solid rgba(255,255,255,0.15); font-family: 'JetBrains Mono', monospace; font-size: 11px; display: flex; flex-direction: column; gap: 2px;">
               <div><span style="color:#94a3b8;">Frequência Anual:</span> <b>${flights} voos</b></div>
@@ -123,7 +150,7 @@
           backgroundColor: 'rgba(15, 23, 42, 0.95)',
           color: '#ffffff',
           borderRadius: '8px',
-          border: '1px solid rgba(56, 189, 248, 0.3)',
+          border: `1px solid ${isDisrupted ? 'rgba(239, 68, 68, 0.5)' : 'rgba(56, 189, 248, 0.3)'}`,
           boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)'
         }
       };
@@ -139,6 +166,9 @@
     const airportsMap = $rawAirports || {};
     const selectedIcao = $selectedAirport;
     const gap = $selectedGap;
+    const closedIcao = $simulatedClosedAirport;
+    const isStory = $isStoryMode;
+    const storyChapter = isStory ? STORY_CHAPTERS[$currentStoryIndex] : null;
 
     // Conjuntos para filtragem rápida de Ego-Graph e Desertos de Rota
     let egoConnectedIcaos = new Set();
@@ -160,10 +190,75 @@
       }
     }
 
-    // 1. Camada de Arcos 3D (ArcLayer)
-    const arcLayer = new ArcLayer({
-      id: 'flight-routes-arc-layer',
-      data: $currentRoutes,
+    let isolatedIcaos = new Set();
+    if ($resilienceResults?.isolatedAirports) {
+      $resilienceResults.isolatedAirports.forEach(a => isolatedIcaos.add(a.icao));
+    }
+
+    let storyNodeSet = new Set();
+    if (storyChapter?.highlightNodes) {
+      storyChapter.highlightNodes.forEach(n => storyNodeSet.add(n));
+    }
+
+    // Separação de Rotas em Foreground (Active) e Background (Dimmed) para resolução do Picking Bug
+    const hasFocusFilter = Boolean(selectedIcao || gap || closedIcao || isStory);
+    
+    let foregroundRoutes = [];
+    let backgroundRoutes = [];
+
+    if (!hasFocusFilter) {
+      // Sem filtro: todas as rotas estão no Foreground e são pickable
+      foregroundRoutes = $currentRoutes;
+      backgroundRoutes = [];
+    } else {
+      $currentRoutes.forEach(r => {
+        let isForeground = false;
+
+        if (closedIcao) {
+          // Na simulação de resiliência, rotas rompidas ou ativas são inspecionáveis
+          isForeground = true;
+        } else if (gap) {
+          if (gapPathEdges.has(`${r.orig}-${r.dest}`)) isForeground = true;
+        } else if (selectedIcao) {
+          if (r.orig === selectedIcao || r.dest === selectedIcao) isForeground = true;
+        } else if (isStory && storyNodeSet.size > 0) {
+          if (storyNodeSet.has(r.orig) || storyNodeSet.has(r.dest)) isForeground = true;
+        }
+
+        if (isForeground) {
+          foregroundRoutes.push(r);
+        } else {
+          backgroundRoutes.push(r);
+        }
+      });
+    }
+
+    // 1. Camada de Arcos de Fundo (Background - Inativas / Dimmed): PICKABLE = FALSE
+    const backgroundArcLayer = new ArcLayer({
+      id: 'flight-routes-bg-arc',
+      data: backgroundRoutes,
+      pickable: false, // OBRIGATÓRIO: Desativa buffer de picking da GPU nas rotas apagadas
+      getSourcePosition: d => {
+        const a = airportsMap[d.orig];
+        return a ? [a.lon, a.lat] : [0, 0];
+      },
+      getTargetPosition: d => {
+        const a = airportsMap[d.dest];
+        return a ? [a.lon, a.lat] : [0, 0];
+      },
+      getWidth: 0.5,
+      getSourceColor: pal.arcDimmed,
+      getTargetColor: pal.arcDimmed,
+      getHeight: d => {
+        const dist = d.dist_km || 1000;
+        return Math.min(0.9, Math.max(0.15, dist / 4500));
+      }
+    });
+
+    // 2. Camada de Arcos Ativos (Foreground - Destaque / Ego-Graph / Gap / Resiliência): PICKABLE = TRUE
+    const foregroundArcLayer = new ArcLayer({
+      id: 'flight-routes-fg-arc',
+      data: foregroundRoutes,
       pickable: true,
       getSourcePosition: d => {
         const a = airportsMap[d.orig];
@@ -174,18 +269,24 @@
         return a ? [a.lon, a.lat] : [0, 0];
       },
       getWidth: d => {
+        if (closedIcao && (d.orig === closedIcao || d.dest === closedIcao)) {
+          return 2.5;
+        }
         if (gap && gapPathEdges.has(`${d.orig}-${d.dest}`)) {
-          return 4.5;
+          return 4.8;
         }
-        if (selectedIcao) {
-          if (d.orig === selectedIcao || d.dest === selectedIcao) {
-            return Math.max(2, Math.min(6, Math.log2(d.flights + 1) * 0.8));
-          }
-          return 0.5;
+        if (selectedIcao && (d.orig === selectedIcao || d.dest === selectedIcao)) {
+          return Math.max(2.5, Math.min(6.5, Math.log2(d.flights + 1) * 0.9));
         }
-        return Math.max(1, Math.min(4, Math.log2(d.flights + 1) * 0.5));
+        if (isStory) {
+          return Math.max(2, Math.min(5, Math.log2(d.flights + 1) * 0.7));
+        }
+        return Math.max(1, Math.min(4.5, Math.log2(d.flights + 1) * 0.55));
       },
       getSourceColor: d => {
+        if (closedIcao && (d.orig === closedIcao || d.dest === closedIcao)) {
+          return pal.arcDisrupted;
+        }
         if (gap) {
           if (gapPathEdges.has(`${d.orig}-${d.dest}`)) return pal.arcGap;
           return pal.arcDimmed;
@@ -195,9 +296,15 @@
           if (d.dest === selectedIcao) return pal.arcSelectedIn;
           return pal.arcDimmed;
         }
+        if (isStory && (storyNodeSet.has(d.orig) || storyNodeSet.has(d.dest))) {
+          return pal.arcSelectedOut;
+        }
         return pal.arcDefault;
       },
       getTargetColor: d => {
+        if (closedIcao && (d.orig === closedIcao || d.dest === closedIcao)) {
+          return pal.arcDisrupted;
+        }
         if (gap) {
           if (gapPathEdges.has(`${d.orig}-${d.dest}`)) return pal.arcGap;
           return pal.arcDimmed;
@@ -207,6 +314,9 @@
           if (d.dest === selectedIcao) return pal.arcSelectedOut;
           return pal.arcDimmed;
         }
+        if (isStory && (storyNodeSet.has(d.orig) || storyNodeSet.has(d.dest))) {
+          return pal.arcSelectedIn;
+        }
         return pal.arcDefault;
       },
       getHeight: d => {
@@ -214,28 +324,37 @@
         return Math.min(1.0, Math.max(0.15, dist / 4500));
       },
       updateTriggers: {
-        getWidth: [selectedIcao, gap],
-        getSourceColor: [selectedIcao, gap, $theme],
-        getTargetColor: [selectedIcao, gap, $theme]
+        getWidth: [selectedIcao, gap, closedIcao, isStory],
+        getSourceColor: [selectedIcao, gap, closedIcao, isStory, $theme],
+        getTargetColor: [selectedIcao, gap, closedIcao, isStory, $theme]
       }
     });
 
-    // 2. Camada de Aeroportos (ScatterplotLayer)
+    // 3. Camada de Aeroportos (ScatterplotLayer)
     const scatterLayer = new ScatterplotLayer({
       id: 'airports-node-layer',
       data: $activeYearAirports,
       pickable: true,
-      opacity: 0.9,
+      opacity: 0.95,
       stroked: true,
       filled: true,
       radiusScale: 1,
       radiusMinPixels: 3,
       radiusMaxPixels: 28,
       lineWidthMinPixels: 1,
-      lineWidthMaxPixels: 2,
+      lineWidthMaxPixels: 3,
       getPosition: d => d.coordinates,
       getRadius: d => {
         const m = d.metrics || {};
+        const icao = d.icao;
+
+        if (icao === closedIcao) return 14000;
+        if (isolatedIcaos.has(icao)) return 10000;
+
+        if (isStory && storyNodeSet.has(icao)) {
+          return 8000 + Math.sqrt(m.strength || 1) * 140;
+        }
+
         if ($metricMode === 'betweenness') {
           return 4000 + (m.betweenness_norm || 0) * 35000;
         }
@@ -248,38 +367,61 @@
       },
       getFillColor: d => {
         const icao = d.icao;
+
+        // Estado de Simulação de Falha
+        if (icao === closedIcao) return pal.nodeClosed;
+        if (isolatedIcaos.has(icao)) return pal.nodeIsolated;
+
+        // Estado de Desertos de Rota
         if (gap) {
           if (icao === gap.orig_icao || icao === gap.dest_icao) return pal.nodeGap;
           if (gapPathNodes.has(icao)) return pal.nodeHub;
           return pal.nodeDimmed;
         }
+
+        // Estado de Foco Ego-Graph
         if (selectedIcao) {
           if (icao === selectedIcao) return pal.nodeSelected;
           if (egoConnectedIcaos.has(icao)) return pal.nodeConnected;
           return pal.nodeDimmed;
         }
-        // Cores base por centralidade
+
+        // Modo História
+        if (isStory) {
+          if (storyNodeSet.has(icao)) return pal.nodeStory;
+          return pal.nodeDimmed;
+        }
+
+        // Modo Normal
         const betNorm = d.metrics?.betweenness_norm || 0;
-        if (betNorm > 0.4) return pal.nodeHub;
+        if (betNorm > 0.35) return pal.nodeHub;
         return pal.nodeDefault;
       },
       getLineColor: d => {
+        if (d.icao === closedIcao) return [255, 255, 255, 255];
+        if (isolatedIcaos.has(d.icao)) return [255, 200, 200, 255];
         if (d.icao === selectedIcao) return [255, 255, 255, 255];
         return [0, 0, 0, 100];
       },
       onClick: info => {
         if (info.object) {
-          selectedAirport.set(info.object.icao);
-          selectedGap.set(null);
+          if ($isResilienceMode) {
+            // Em modo resiliência, clicar no aeroporto o seleciona para interdição
+            simulatedClosedAirport.set(info.object.icao);
+          } else {
+            selectedAirport.set(info.object.icao);
+            selectedGap.set(null);
+          }
         }
       },
       updateTriggers: {
-        getRadius: [$metricMode],
-        getFillColor: [selectedIcao, gap, $theme, $metricMode]
+        getRadius: [$metricMode, closedIcao, isolatedIcaos, isStory, $currentStoryIndex],
+        getFillColor: [selectedIcao, gap, closedIcao, isolatedIcaos, isStory, $theme, $metricMode, $currentStoryIndex]
       }
     });
 
-    return [arcLayer, scatterLayer];
+    const layers = [backgroundArcLayer, foregroundArcLayer, scatterLayer];
+    return layers;
   }
 
   function updateDeckLayers() {
@@ -314,16 +456,23 @@
       attributionControl: false
     });
 
-    // Controles de Navegação Compactos
     mapInstance.addControl(new maplibregl.NavigationControl({ showCompass: true }), 'bottom-right');
 
-    // Inicialização do Deck.gl MapboxOverlay
     deckOverlay = new MapboxOverlay({
       layers: getLayers(),
       getTooltip
     });
 
     mapInstance.addControl(deckOverlay);
+
+    // Loop de animação contínua de fluxo quando ativado
+    const animate = () => {
+      if ($enableFlowAnimation) {
+        flowTime = (flowTime + 0.015) % 1.0;
+      }
+      animationFrameId = requestAnimationFrame(animate);
+    };
+    animationFrameId = requestAnimationFrame(animate);
   });
 
   // Reage à mudança de tema trocando o basemap
@@ -333,23 +482,38 @@
   }
 
   // Reage a mudanças de dados ou estado e atualiza as camadas Deck.gl
-  $: if (deckOverlay && ($activeYearAirports || $currentRoutes || $selectedAirport || $selectedGap || $metricMode || $theme)) {
+  $: if (deckOverlay && (
+    $activeYearAirports || 
+    $currentRoutes || 
+    $selectedAirport || 
+    $selectedGap || 
+    $simulatedClosedAirport || 
+    $resilienceResults || 
+    $isStoryMode || 
+    $currentStoryIndex || 
+    $metricMode || 
+    $theme
+  )) {
     updateDeckLayers();
   }
 
   // Reage à movimentação suave da câmera solicitada por outros componentes
   $: if (mapInstance && $cameraTarget) {
-    const [lon, lat, zoom] = $cameraTarget;
+    const [lon, lat, zoom, pitch, bearing] = $cameraTarget;
     mapInstance.flyTo({
       center: [lon, lat],
       zoom: zoom || 6.5,
-      pitch: 40,
-      duration: 1400,
+      pitch: pitch !== undefined ? pitch : 38,
+      bearing: bearing !== undefined ? bearing : 0,
+      duration: 1500,
       essential: true
     });
   }
 
   onDestroy(() => {
+    if (animationFrameId) {
+      cancelAnimationFrame(animationFrameId);
+    }
     if (mapInstance) {
       mapInstance.remove();
     }

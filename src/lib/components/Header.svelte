@@ -1,5 +1,18 @@
 <script>
-  import { theme, metricMode, selectedAirport, selectedGap } from '$lib/stores/flightState.js';
+  import { 
+    theme, 
+    metricMode, 
+    selectedAirport, 
+    selectedGap,
+    isResilienceMode,
+    isStoryMode,
+    currentStoryIndex,
+    enableFlowAnimation,
+    STORY_CHAPTERS,
+    cameraTarget,
+    selectedYear,
+    simulatedClosedAirport 
+  } from '$lib/stores/flightState.js';
   import { currentYearStats, isLoading } from '$lib/stores/dataStore.js';
   import Icon from '$lib/icons/Icon.svelte';
 
@@ -18,9 +31,48 @@
     });
   }
 
+  function toggleStoryMode() {
+    isStoryMode.update(active => {
+      const next = !active;
+      if (next) {
+        isResilienceMode.set(false);
+        selectedAirport.set(null);
+        selectedGap.set(null);
+        currentStoryIndex.set(0);
+        const chapter = STORY_CHAPTERS[0];
+        selectedYear.set(chapter.year);
+        const [lon, lat, zoom] = chapter.camera;
+        cameraTarget.set([lon, lat, zoom, 40, -10]);
+      }
+      return next;
+    });
+  }
+
+  function toggleResilienceMode() {
+    isResilienceMode.update(active => {
+      const next = !active;
+      if (next) {
+        isStoryMode.set(false);
+        selectedAirport.set(null);
+        selectedGap.set(null);
+      } else {
+        simulatedClosedAirport.set(null);
+      }
+      return next;
+    });
+  }
+
+  function toggleFlowAnimation() {
+    enableFlowAnimation.update(a => !a);
+  }
+
   function resetSelection() {
     selectedAirport.set(null);
     selectedGap.set(null);
+    simulatedClosedAirport.set(null);
+    isResilienceMode.set(false);
+    isStoryMode.set(false);
+    cameraTarget.set([-52.0, -14.5, 4.2, 32, 0]);
   }
 </script>
 
@@ -28,7 +80,7 @@
   <!-- Barra de Topo Verde/Amarelo Estilo Gov.br -->
   <div class="h-1 bg-gradient-to-r from-gov-green via-yellow-400 to-gov-blue"></div>
 
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center justify-between gap-4">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center justify-between gap-3">
     <!-- Identificação do Projeto -->
     <div class="flex items-center gap-3">
       <div class="w-10 h-10 rounded-lg bg-gov-blue dark:bg-dark-accent/20 border border-gov-blue/30 dark:border-dark-accent/40 flex items-center justify-center text-white dark:text-dark-accent shadow-sm">
@@ -49,9 +101,34 @@
       </div>
     </div>
 
+    <!-- Modos Analíticos Avançados (História / Resiliência / Fluxo) -->
+    <div class="flex items-center gap-1.5">
+      <!-- Botão Modo História -->
+      <button
+        type="button"
+        onclick={toggleStoryMode}
+        class="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border transition-all {$isStoryMode ? 'bg-gov-blue dark:bg-dark-accent text-white dark:text-dark-bg font-bold border-transparent shadow-md' : 'bg-gray-100 dark:bg-dark-card hover:bg-gray-200 dark:hover:bg-dark-border text-gray-700 dark:text-gray-300 border-gray-200 dark:border-dark-border'}"
+        title="Ativar Navegação Guiada pelos Marcos Históricos da Aviação"
+      >
+        <Icon name="bookOpen" class="w-3.5 h-3.5" />
+        <span class="hidden sm:inline">História</span>
+      </button>
+
+      <!-- Botão Simulação de Resiliência -->
+      <button
+        type="button"
+        onclick={toggleResilienceMode}
+        class="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border transition-all {$isResilienceMode ? 'bg-red-500 text-white font-bold border-red-600 shadow-md animate-pulse' : 'bg-gray-100 dark:bg-dark-card hover:bg-red-500/10 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-dark-border'}"
+        title="Simular Falhas e Interdição de Aeroportos Críticos (What-If)"
+      >
+        <Icon name="shieldAlert" class="w-3.5 h-3.5 {$isResilienceMode ? 'text-white' : 'text-red-500'}" />
+        <span class="hidden sm:inline">Simular Falha</span>
+      </button>
+    </div>
+
     <!-- Estatísticas Rápidas do Ano Atual -->
-    {#if !$isLoading}
-      <div class="hidden lg:flex items-center gap-4 text-xs font-mono py-1 px-3 rounded-lg bg-gray-100 dark:bg-dark-card border border-gray-200 dark:border-dark-border text-gray-700 dark:text-gray-300">
+    {#if !$isLoading && !$isResilienceMode && !$isStoryMode}
+      <div class="hidden xl:flex items-center gap-4 text-xs font-mono py-1 px-3 rounded-lg bg-gray-100 dark:bg-dark-card border border-gray-200 dark:border-dark-border text-gray-700 dark:text-gray-300">
         <div class="flex items-center gap-1.5" title="Aeroportos ativos com voos no ano">
           <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
           <span class="font-bold text-gray-900 dark:text-white">{$currentYearStats.activeAirports}</span> aeroportos
@@ -72,10 +149,10 @@
     <!-- Controles de Métrica, Reset e Tema -->
     <div class="flex items-center gap-2">
       <!-- Seletor de Métrica dos Nós -->
-      <div class="hidden md:flex items-center rounded-lg bg-gray-100 dark:bg-dark-card p-0.5 border border-gray-200 dark:border-dark-border text-xs">
+      <div class="hidden lg:flex items-center rounded-lg bg-gray-100 dark:bg-dark-card p-0.5 border border-gray-200 dark:border-dark-border text-xs">
         <button
           type="button"
-          class="px-2.5 py-1 rounded-md font-medium transition-all {$metricMode === 'flights' ? 'bg-white dark:bg-gov-blue text-gov-blue dark:text-white shadow-sm font-semibold' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'}"
+          class="px-2 py-1 rounded-md font-medium transition-all {$metricMode === 'flights' ? 'bg-white dark:bg-gov-blue text-gov-blue dark:text-white shadow-sm font-semibold' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'}"
           onclick={() => metricMode.set('flights')}
           title="Tamanho dos nós proporcional ao volume de voos"
         >
@@ -83,7 +160,7 @@
         </button>
         <button
           type="button"
-          class="px-2.5 py-1 rounded-md font-medium transition-all {$metricMode === 'betweenness' ? 'bg-white dark:bg-gov-blue text-gov-blue dark:text-white shadow-sm font-semibold' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'}"
+          class="px-2 py-1 rounded-md font-medium transition-all {$metricMode === 'betweenness' ? 'bg-white dark:bg-gov-blue text-gov-blue dark:text-white shadow-sm font-semibold' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'}"
           onclick={() => metricMode.set('betweenness')}
           title="Tamanho e cor proporcionais à centralidade de intermediação (Hubs)"
         >
@@ -91,7 +168,7 @@
         </button>
         <button
           type="button"
-          class="px-2.5 py-1 rounded-md font-medium transition-all {$metricMode === 'degree' ? 'bg-white dark:bg-gov-blue text-gov-blue dark:text-white shadow-sm font-semibold' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'}"
+          class="px-2 py-1 rounded-md font-medium transition-all {$metricMode === 'degree' ? 'bg-white dark:bg-gov-blue text-gov-blue dark:text-white shadow-sm font-semibold' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'}"
           onclick={() => metricMode.set('degree')}
           title="Tamanho proporcional à quantidade de cidades conectadas (Grau)"
         >
@@ -100,7 +177,7 @@
       </div>
 
       <!-- Botão de Limpar Seleção -->
-      {#if $selectedAirport || $selectedGap}
+      {#if $selectedAirport || $selectedGap || $simulatedClosedAirport || $isResilienceMode || $isStoryMode}
         <button
           type="button"
           onclick={resetSelection}

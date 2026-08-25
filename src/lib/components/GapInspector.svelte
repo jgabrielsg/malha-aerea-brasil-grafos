@@ -2,16 +2,7 @@
   import { currentGapsData } from '$lib/stores/dataStore.js';
   import { selectedGap, selectedAirport, selectedYear, cameraTarget } from '$lib/stores/flightState.js';
   import { rawAirports } from '$lib/stores/dataStore.js';
-  import { 
-    AlertTriangle, 
-    X, 
-    ArrowRight, 
-    Compass, 
-    Route, 
-    Sparkles, 
-    CornerDownRight, 
-    Navigation 
-  } from '@lucide/svelte';
+  import Icon from '$lib/icons/Icon.svelte';
 
   let { isOpen = $bindable(false) } = $props();
 
@@ -45,7 +36,7 @@
     if (origMeta && destMeta) {
       const midLon = (origMeta.lon + destMeta.lon) / 2;
       const midLat = (origMeta.lat + destMeta.lat) / 2;
-      cameraTarget.set([midLon, midLat, 4.8]);
+      cameraTarget.set([midLon, midLat, 4.8, 35, 0]);
     }
   }
 
@@ -62,7 +53,7 @@
     class="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/95 dark:bg-dark-surface/95 backdrop-blur border border-gray-200 dark:border-dark-border shadow-lg text-xs hover:border-amber-500/50 transition-all text-left group"
   >
     <div class="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-500 border border-amber-500/30 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
-      <AlertTriangle class="w-4 h-4" />
+      <Icon name="alertTriangle" class="w-4 h-4" />
     </div>
     <div>
       <div class="flex items-center gap-1.5 font-bold text-gray-900 dark:text-white">
@@ -86,7 +77,7 @@
       <div>
         <div class="flex items-center gap-2 mb-1">
           <div class="w-6 h-6 rounded-md bg-amber-500/20 text-amber-500 flex items-center justify-center">
-            <Route class="w-3.5 h-3.5" />
+            <Icon name="route" class="w-3.5 h-3.5" />
           </div>
           <h2 class="text-sm font-bold text-gray-900 dark:text-white">
             Inspetor de Desertos de Rota ({$selectedYear})
@@ -102,7 +93,7 @@
         onclick={() => isOpen = false}
         class="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-dark-card transition-colors"
       >
-        <X class="w-5 h-5" />
+        <Icon name="x" class="w-5 h-5" />
       </button>
     </div>
 
@@ -145,7 +136,7 @@
           <div class="flex items-center justify-between gap-2 mb-2">
             <div class="flex items-center gap-1.5 font-bold text-gray-900 dark:text-white truncate">
               <span>{gap.orig_city} ({gap.orig_state})</span>
-              <ArrowRight class="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+              <Icon name="arrowRight" class="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
               <span>{gap.dest_city} ({gap.dest_state})</span>
             </div>
             <span class="font-mono text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-600 dark:text-amber-400 font-bold flex-shrink-0">
@@ -157,7 +148,7 @@
           {#if gap.path && gap.path.length > 2}
             <div class="p-2 rounded-lg bg-white dark:bg-dark-surface border border-gray-200/60 dark:border-dark-border/60 font-mono text-[11px] space-y-1">
               <div class="text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                <CornerDownRight class="w-3 h-3 text-amber-500" />
+                <Icon name="cornerDownRight" class="w-3 h-3 text-amber-500" />
                 <span class="font-semibold text-gray-700 dark:text-gray-300">
                   Rota com {gap.stops} {gap.stops === 1 ? 'escala' : 'escalas'}:
                 </span>
