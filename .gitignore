@@ -4,12 +4,16 @@ data/
 *.parquet
 *.csv
 
+# Garante a inclusão dos dados estáticos compilados para o Netlify
+!static/data/
+!static/data/*.json
+
 # Dependências
 /node_modules
 /.pnp
 .pnp.js
 
-# Testes eCobertura
+# Testes e Cobertura
 /coverage
 /build
 
@@ -46,5 +50,4 @@ pnpm-debug.log*
 *.swp
 
 AGENTS.md
-ROADMAP.mdbuild/
-.svelte-kit/
+ROADMAP.md

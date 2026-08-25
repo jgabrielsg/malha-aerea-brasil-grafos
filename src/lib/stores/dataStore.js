@@ -1,4 +1,5 @@
 import { writable, derived, get } from 'svelte/store';
+import { base } from '$app/paths';
 import { selectedYear, selectedAirport, selectedGap } from './flightState.js';
 
 // Estado de carregamento dos dados estáticos
@@ -12,20 +13,34 @@ export const rawGapsByYear = writable({});
 
 /**
  * Carrega todos os payloads JSON estáticos de forma assíncrona.
+ * Utiliza o prefixo base de $app/paths para compatibilidade com deploy no Netlify/subcaminhos.
  */
 export async function loadFlightData() {
   isLoading.set(true);
   loadError.set(null);
 
   try {
+    const basePath = base || '';
     const [resAirports, resRoutes, resGaps] = await Promise.all([
-      fetch('/data/airports_meta.json'),
-      fetch('/data/routes_by_year.json'),
-      fetch('/data/connectivity_gaps.json')
+      fetch(`${basePath}/data/airports_meta.json`),
+      fetch(`${basePath}/data/routes_by_year.json`),
+      fetch(`${basePath}/data/connectivity_gaps.json`)
     ]);
 
-    if (!resAirports.ok || !resRoutes.ok || !resGaps.ok) {
-      throw new Error(`Falha ao carregar payloads estáticos: status [${resAirports.status}, ${resRoutes.status}, ${resGaps.status}]`);
+    const responses = [
+      { name: 'airports_meta.json', res: resAirports },
+      { name: 'routes_by_year.json', res: resRoutes },
+      { name: 'connectivity_gaps.json', res: resGaps }
+    ];
+
+    for (const item of responses) {
+      if (!item.res.ok) {
+        throw new Error(`Erro HTTP ${item.res.status} ao carregar ${item.name}.`);
+      }
+      const contentType = item.res.headers.get('content-type') || '';
+      if (contentType.includes('text/html') || !contentType.includes('json')) {
+        throw new Error(`Arquivo estático /data/${item.name} não encontrado ou retornou HTML (redirecionamento SPA). Verifique a pasta static/data/.`);
+      }
     }
 
     const [dataAirports, dataRoutes, dataGaps] = await Promise.all([

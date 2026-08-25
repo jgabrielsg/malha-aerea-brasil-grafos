@@ -5,8 +5,9 @@
   "description": "GeoFlight-BR: Painel de Análise Topológica da Malha Aérea Brasileira (2000-2026)",
   "type": "module",
   "scripts": {
-    "dev": "vite dev --host",
-    "build": "vite build",
+    "dev": "vite dev",
+    "check-data": "node -e \"const fs = require('fs'); ['airports_meta.json', 'routes_by_year.json', 'connectivity_gaps.json'].forEach(f => { if (!fs.existsSync('static/data/' + f)) throw new Error('Faltando: static/data/' + f); }); console.log('Dados estáticos validados com sucesso.');\"",
+    "build": "npm run check-data && vite build",
     "preview": "vite preview"
   },
   "devDependencies": {
