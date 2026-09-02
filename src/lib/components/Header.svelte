@@ -126,7 +126,7 @@
       <button
         type="button"
         onclick={toggleRoutePlanner}
-        class="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border transition-all {$isRoutePlannerOpen ? 'bg-gov-blue dark:bg-dark-accent text-white dark:text-dark-bg font-bold border-transparent shadow-md ring-2 ring-gov-blue/20 dark:ring-dark-accent/20' : 'bg-gray-100 dark:bg-dark-card hover:bg-gov-blue/10 dark:hover:bg-dark-accent/10 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-dark-border'}"
+        class="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border transition-all whitespace-nowrap {$isRoutePlannerOpen ? 'bg-gov-blue dark:bg-dark-accent text-white dark:text-dark-bg font-bold border-transparent shadow-md ring-2 ring-gov-blue/20 dark:ring-dark-accent/20' : 'bg-gray-100 dark:bg-dark-card hover:bg-gov-blue/10 dark:hover:bg-dark-accent/10 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-dark-border'}"
         title="Planejador de Itinerários e Rotas Multi-Escala (Algoritmo Yen SOTA)"
       >
         <Icon name="route" class="w-3.5 h-3.5 {$isRoutePlannerOpen ? 'text-white dark:text-dark-bg' : 'text-gov-blue dark:text-dark-accent'}" />
@@ -137,7 +137,7 @@
       <button
         type="button"
         onclick={toggleStoryMode}
-        class="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border transition-all {$isStoryMode ? 'bg-gov-blue dark:bg-dark-accent text-white dark:text-dark-bg font-bold border-transparent shadow-md' : 'bg-gray-100 dark:bg-dark-card hover:bg-gray-200 dark:hover:bg-dark-border text-gray-700 dark:text-gray-300 border-gray-200 dark:border-dark-border'}"
+        class="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border transition-all whitespace-nowrap {$isStoryMode ? 'bg-gov-blue dark:bg-dark-accent text-white dark:text-dark-bg font-bold border-transparent shadow-md' : 'bg-gray-100 dark:bg-dark-card hover:bg-gray-200 dark:hover:bg-dark-border text-gray-700 dark:text-gray-300 border-gray-200 dark:border-dark-border'}"
         title="Ativar Navegação Guiada pelos Marcos Históricos da Aviação"
       >
         <Icon name="bookOpen" class="w-3.5 h-3.5" />
@@ -148,7 +148,7 @@
       <button
         type="button"
         onclick={toggleResilienceMode}
-        class="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border transition-all {$isResilienceMode ? 'bg-red-500 text-white font-bold border-red-600 shadow-md animate-pulse' : 'bg-gray-100 dark:bg-dark-card hover:bg-red-500/10 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-dark-border'}"
+        class="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border transition-all whitespace-nowrap {$isResilienceMode ? 'bg-red-500 text-white font-bold border-red-600 shadow-md animate-pulse' : 'bg-gray-100 dark:bg-dark-card hover:bg-red-500/10 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-dark-border'}"
         title="Simular Falhas e Interdição de Aeroportos Críticos (What-If)"
       >
         <Icon name="shieldAlert" class="w-3.5 h-3.5 {$isResilienceMode ? 'text-white' : 'text-red-500'}" />
@@ -211,7 +211,7 @@
         <button
           type="button"
           onclick={resetSelection}
-          class="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 transition-all shadow-sm"
+          class="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 transition-all whitespace-nowrap shadow-sm"
           title="Limpar foco e restaurar visão global da malha"
         >
           <Icon name="rotateCcw" class="w-3.5 h-3.5" />
