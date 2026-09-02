@@ -14,7 +14,12 @@
     isStoryMode,
     currentStoryIndex,
     STORY_CHAPTERS,
-    enableFlowAnimation
+    enableFlowAnimation,
+    minFlightThresholdIndex,
+    onlyDomestic,
+    isRoutePlannerOpen,
+    activePlannedRoute,
+    cameraBounds
   } from '$lib/stores/flightState.js';
   import { 
     activeYearAirports, 
@@ -200,8 +205,19 @@
       storyChapter.highlightNodes.forEach(n => storyNodeSet.add(n));
     }
 
+    // Conjuntos para destaque de Rota Planejada (Yen k-Shortest Paths)
+    const plannedRoute = $activePlannedRoute;
+    let plannedEdges = new Set();
+    let plannedNodes = new Set();
+    if (plannedRoute?.path) {
+      plannedRoute.path.forEach(icao => plannedNodes.add(icao));
+      for (let i = 0; i < plannedRoute.path.length - 1; i++) {
+        plannedEdges.add(`${plannedRoute.path[i]}-${plannedRoute.path[i+1]}`);
+      }
+    }
+
     // Separação de Rotas em Foreground (Active) e Background (Dimmed) para resolução do Picking Bug
-    const hasFocusFilter = Boolean(selectedIcao || gap || closedIcao || isStory);
+    const hasFocusFilter = Boolean(selectedIcao || gap || closedIcao || isStory || plannedRoute);
     
     let foregroundRoutes = [];
     let backgroundRoutes = [];
@@ -219,6 +235,8 @@
           isForeground = true;
         } else if (gap) {
           if (gapPathEdges.has(`${r.orig}-${r.dest}`)) isForeground = true;
+        } else if (plannedRoute) {
+          if (plannedEdges.has(`${r.orig}-${r.dest}`) || plannedEdges.has(`${r.dest}-${r.orig}`)) isForeground = true;
         } else if (selectedIcao) {
           if (r.orig === selectedIcao || r.dest === selectedIcao) isForeground = true;
         } else if (isStory && storyNodeSet.size > 0) {
@@ -269,6 +287,9 @@
         return a ? [a.lon, a.lat] : [0, 0];
       },
       getWidth: d => {
+        if (plannedRoute && (plannedEdges.has(`${d.orig}-${d.dest}`) || plannedEdges.has(`${d.dest}-${d.orig}`))) {
+          return 5.5;
+        }
         if (closedIcao && (d.orig === closedIcao || d.dest === closedIcao)) {
           return 2.5;
         }
@@ -284,6 +305,12 @@
         return Math.max(1, Math.min(4.5, Math.log2(d.flights + 1) * 0.55));
       },
       getSourceColor: d => {
+        if (plannedRoute) {
+          if (plannedEdges.has(`${d.orig}-${d.dest}`) || plannedEdges.has(`${d.dest}-${d.orig}`)) {
+            return [245, 158, 11, 255]; // Âmbar vibrante
+          }
+          return pal.arcDimmed;
+        }
         if (closedIcao && (d.orig === closedIcao || d.dest === closedIcao)) {
           return pal.arcDisrupted;
         }
@@ -302,6 +329,12 @@
         return pal.arcDefault;
       },
       getTargetColor: d => {
+        if (plannedRoute) {
+          if (plannedEdges.has(`${d.orig}-${d.dest}`) || plannedEdges.has(`${d.dest}-${d.orig}`)) {
+            return [56, 189, 248, 255]; // Ciano vibrante
+          }
+          return pal.arcDimmed;
+        }
         if (closedIcao && (d.orig === closedIcao || d.dest === closedIcao)) {
           return pal.arcDisrupted;
         }
@@ -324,9 +357,9 @@
         return Math.min(1.0, Math.max(0.15, dist / 4500));
       },
       updateTriggers: {
-        getWidth: [selectedIcao, gap, closedIcao, isStory],
-        getSourceColor: [selectedIcao, gap, closedIcao, isStory, $theme],
-        getTargetColor: [selectedIcao, gap, closedIcao, isStory, $theme]
+        getWidth: [selectedIcao, gap, closedIcao, isStory, plannedRoute?.id],
+        getSourceColor: [selectedIcao, gap, closedIcao, isStory, plannedRoute?.id, $theme],
+        getTargetColor: [selectedIcao, gap, closedIcao, isStory, plannedRoute?.id, $theme]
       }
     });
 
@@ -348,6 +381,7 @@
         const m = d.metrics || {};
         const icao = d.icao;
 
+        if (plannedRoute && plannedNodes.has(icao)) return 11000;
         if (icao === closedIcao) return 14000;
         if (isolatedIcaos.has(icao)) return 10000;
 
@@ -367,6 +401,14 @@
       },
       getFillColor: d => {
         const icao = d.icao;
+
+        // Estado de Rota Planejada Ativa (Yen k-Shortest Paths)
+        if (plannedRoute) {
+          if (icao === plannedRoute.path[0]) return [16, 185, 129, 255]; // Verde Esmeralda (Origem)
+          if (icao === plannedRoute.path[plannedRoute.path.length - 1]) return [245, 158, 11, 255]; // Âmbar (Destino)
+          if (plannedNodes.has(icao)) return [56, 189, 248, 255]; // Escalas intermediárias em ciano
+          return pal.nodeDimmed;
+        }
 
         // Estado de Simulação de Falha
         if (icao === closedIcao) return pal.nodeClosed;
@@ -398,6 +440,7 @@
         return pal.nodeDefault;
       },
       getLineColor: d => {
+        if (plannedRoute && plannedNodes.has(d.icao)) return [255, 255, 255, 255];
         if (d.icao === closedIcao) return [255, 255, 255, 255];
         if (isolatedIcaos.has(d.icao)) return [255, 200, 200, 255];
         if (d.icao === selectedIcao) return [255, 255, 255, 255];
@@ -415,8 +458,8 @@
         }
       },
       updateTriggers: {
-        getRadius: [$metricMode, closedIcao, isolatedIcaos, isStory, $currentStoryIndex],
-        getFillColor: [selectedIcao, gap, closedIcao, isolatedIcaos, isStory, $theme, $metricMode, $currentStoryIndex]
+        getRadius: [$metricMode, closedIcao, isolatedIcaos, isStory, $currentStoryIndex, plannedRoute?.id],
+        getFillColor: [selectedIcao, gap, closedIcao, isolatedIcaos, isStory, $theme, $metricMode, $currentStoryIndex, plannedRoute?.id]
       }
     });
 
@@ -492,6 +535,9 @@
     $isStoryMode || 
     $currentStoryIndex || 
     $metricMode || 
+    $minFlightThresholdIndex !== undefined ||
+    $onlyDomestic !== undefined ||
+    $activePlannedRoute?.id !== undefined ||
     $theme
   )) {
     updateDeckLayers();
@@ -505,6 +551,19 @@
       zoom: zoom || 6.5,
       pitch: pitch !== undefined ? pitch : 38,
       bearing: bearing !== undefined ? bearing : 0,
+      duration: 1500,
+      essential: true
+    });
+  }
+
+  // Reage ao enquadramento suave de bounds solicitado pelo planejador de rotas
+  $: if (mapInstance && $cameraBounds) {
+    const isDrawerOpen = $isRoutePlannerOpen;
+    mapInstance.fitBounds($cameraBounds, {
+      padding: isDrawerOpen 
+        ? { top: 80, bottom: 80, left: 80, right: 480 }
+        : { top: 80, bottom: 80, left: 80, right: 80 },
+      maxZoom: 7.5,
       duration: 1500,
       essential: true
     });

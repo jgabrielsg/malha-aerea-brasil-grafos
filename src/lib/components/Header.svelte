@@ -11,7 +11,9 @@
     STORY_CHAPTERS,
     cameraTarget,
     selectedYear,
-    simulatedClosedAirport 
+    simulatedClosedAirport,
+    isRoutePlannerOpen,
+    activePlannedRoute
   } from '$lib/stores/flightState.js';
   import { currentYearStats, isLoading } from '$lib/stores/dataStore.js';
   import Icon from '$lib/icons/Icon.svelte';
@@ -62,6 +64,21 @@
     });
   }
 
+  function toggleRoutePlanner() {
+    isRoutePlannerOpen.update(active => {
+      const next = !active;
+      if (next) {
+        isStoryMode.set(false);
+        isResilienceMode.set(false);
+        selectedAirport.set(null);
+        selectedGap.set(null);
+      } else {
+        activePlannedRoute.set(null);
+      }
+      return next;
+    });
+  }
+
   function toggleFlowAnimation() {
     enableFlowAnimation.update(a => !a);
   }
@@ -72,6 +89,8 @@
     simulatedClosedAirport.set(null);
     isResilienceMode.set(false);
     isStoryMode.set(false);
+    isRoutePlannerOpen.set(false);
+    activePlannedRoute.set(null);
     cameraTarget.set([-52.0, -14.5, 4.2, 32, 0]);
   }
 </script>
@@ -101,8 +120,19 @@
       </div>
     </div>
 
-    <!-- Modos Analíticos Avançados (História / Resiliência / Fluxo) -->
+    <!-- Modos Analíticos Avançados (História / Resiliência / Planejador de Rotas) -->
     <div class="flex items-center gap-1.5">
+      <!-- Botão Planejador de Rotas Multi-Escala -->
+      <button
+        type="button"
+        onclick={toggleRoutePlanner}
+        class="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border transition-all {$isRoutePlannerOpen ? 'bg-gov-blue dark:bg-dark-accent text-white dark:text-dark-bg font-bold border-transparent shadow-md ring-2 ring-gov-blue/20 dark:ring-dark-accent/20' : 'bg-gray-100 dark:bg-dark-card hover:bg-gov-blue/10 dark:hover:bg-dark-accent/10 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-dark-border'}"
+        title="Planejador de Itinerários e Rotas Multi-Escala (Algoritmo Yen SOTA)"
+      >
+        <Icon name="route" class="w-3.5 h-3.5 {$isRoutePlannerOpen ? 'text-white dark:text-dark-bg' : 'text-gov-blue dark:text-dark-accent'}" />
+        <span class="hidden sm:inline">Planejar Rota</span>
+      </button>
+
       <!-- Botão Modo História -->
       <button
         type="button"
@@ -177,7 +207,7 @@
       </div>
 
       <!-- Botão de Limpar Seleção -->
-      {#if $selectedAirport || $selectedGap || $simulatedClosedAirport || $isResilienceMode || $isStoryMode}
+      {#if $selectedAirport || $selectedGap || $simulatedClosedAirport || $isResilienceMode || $isStoryMode || $isRoutePlannerOpen}
         <button
           type="button"
           onclick={resetSelection}

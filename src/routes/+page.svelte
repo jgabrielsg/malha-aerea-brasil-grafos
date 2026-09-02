@@ -8,8 +8,10 @@
   import GapInspector from '$lib/components/GapInspector.svelte';
   import ResiliencePanel from '$lib/components/ResiliencePanel.svelte';
   import StoryMode from '$lib/components/StoryMode.svelte';
+  import FilterToolbar from '$lib/components/FilterToolbar.svelte';
+  import RoutePlanner from '$lib/components/RoutePlanner.svelte';
   import { isLoading, loadError } from '$lib/stores/dataStore.js';
-  import { selectedAirport, isResilienceMode, isStoryMode } from '$lib/stores/flightState.js';
+  import { selectedAirport, isResilienceMode, isStoryMode, isRoutePlannerOpen } from '$lib/stores/flightState.js';
   import Icon from '$lib/icons/Icon.svelte';
 
   let isGapInspectorOpen = $state(false);
@@ -63,6 +65,11 @@
           <div class="pointer-events-auto">
             <TimelineController />
           </div>
+
+          <!-- Filtros de Frequência e Escopo Doméstico -->
+          <div class="pointer-events-auto">
+            <FilterToolbar />
+          </div>
         </div>
       {/if}
 
@@ -79,8 +86,10 @@
       {/if}
     </div>
 
-    <!-- Painel Lateral: Simulação de Resiliência (What-If) -->
-    {#if $isResilienceMode}
+    <!-- Painel Lateral: Planejador de Rotas / Simulação de Resiliência / Detalhes do Aeroporto -->
+    {#if $isRoutePlannerOpen}
+      <RoutePlanner />
+    {:else if $isResilienceMode}
       <ResiliencePanel />
     {:else if $selectedAirport}
       <!-- Painel Lateral Retrátil de Detalhes do Aeroporto (Ego-Graph) -->

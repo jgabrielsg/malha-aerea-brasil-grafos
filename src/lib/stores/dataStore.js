@@ -1,6 +1,13 @@
 import { writable, derived, get } from 'svelte/store';
 import { base } from '$app/paths';
-import { selectedYear, selectedAirport, selectedGap } from './flightState.js';
+import { 
+  selectedYear, 
+  selectedAirport, 
+  selectedGap,
+  minFlightThresholdIndex,
+  onlyDomestic,
+  FREQUENCY_LEVELS
+} from './flightState.js';
 
 // Estado de carregamento dos dados estáticos
 export const isLoading = writable(true);
@@ -70,13 +77,54 @@ export const airportsList = derived(rawAirports, ($airports) => {
   });
 });
 
-// Rotas ativas no ano selecionado
-export const currentRoutes = derived(
+// Rotas brutas do ano selecionado sem filtros adicionais
+export const rawYearRoutes = derived(
   [rawRoutesByYear, selectedYear],
   ([$routesByYear, $year]) => {
     return $routesByYear[String($year)] || [];
   }
 );
+
+/**
+ * Pipeline Reativo de Filtragem (em cascata):
+ * 1. Filtro do ano ativo (selectedYear via rawYearRoutes)
+ * 2. Filtro geográfico (onlyDomestic: origAirport.country === 'BR' && destAirport.country === 'BR')
+ * 3. Filtro de frequência mínima operacional (flights >= FREQUENCY_LEVELS[minFlightThresholdIndex].min)
+ */
+export const filteredRoutes = derived(
+  [rawYearRoutes, rawAirports, onlyDomestic, minFlightThresholdIndex],
+  ([$yearRoutes, $airports, $onlyDomestic, $thresholdIdx]) => {
+    if (!$yearRoutes || $yearRoutes.length === 0) return [];
+
+    const minFlights = FREQUENCY_LEVELS[$thresholdIdx]?.min ?? 1;
+
+    return $yearRoutes.filter(route => {
+      const origAirport = $airports[route.orig];
+      const destAirport = $airports[route.dest];
+
+      // Requisito de qualidade: aeroportos devem existir na base
+      if (!origAirport || !destAirport) return false;
+
+      // 2. Filtro Geográfico: ambos os aeroportos devem ser brasileiros (country === 'BR')
+      if ($onlyDomestic) {
+        if (origAirport.country !== 'BR' || destAirport.country !== 'BR') {
+          return false;
+        }
+      }
+
+      // 3. Filtro de Frequência Mínima Operacional
+      if ((route.flights || 0) < minFlights) {
+        return false;
+      }
+
+      return true;
+    });
+  }
+);
+
+// Aliases para compatibilidade total com o ecossistema e visualizador Deck.gl
+export const visibleRoutes = filteredRoutes;
+export const currentRoutes = filteredRoutes;
 
 // Lacunas de capitais no ano selecionado
 export const currentGapsData = derived(
@@ -93,9 +141,9 @@ export const currentGapsData = derived(
   }
 );
 
-// Estatísticas globais do ano selecionado para o Header e Dashboard
+// Estatísticas da malha ativa no ano selecionado para o Header e Dashboard
 export const currentYearStats = derived(
-  [currentRoutes, currentGapsData, selectedYear],
+  [filteredRoutes, currentGapsData, selectedYear],
   ([$routes, $gapsData, $year]) => {
     const totalFlights = $routes.reduce((acc, r) => acc + (r.flights || 0), 0);
     const totalPax = $routes.reduce((acc, r) => acc + (r.pax || 0), 0);
@@ -121,14 +169,24 @@ export const currentYearStats = derived(
 
 // Nós de aeroportos ativos no ano corrente enriquecidos com suas métricas daquele ano
 export const activeYearAirports = derived(
-  [rawAirports, selectedYear, currentRoutes],
-  ([$airports, $year, $routes]) => {
+  [rawAirports, selectedYear, filteredRoutes, selectedAirport, selectedGap],
+  ([$airports, $year, $routes, $selectedIcao, $gap]) => {
     const yearStr = String($year);
     const activeIcaos = new Set();
     $routes.forEach(r => {
       activeIcaos.add(r.orig);
       activeIcaos.add(r.dest);
     });
+
+    // Garante que o aeroporto inspecionado no modo Ego-Graph ou Gap permaneça visível
+    if ($selectedIcao && $airports[$selectedIcao]) {
+      activeIcaos.add($selectedIcao);
+    }
+    if ($gap?.path) {
+      $gap.path.forEach(icao => {
+        if ($airports[icao]) activeIcaos.add(icao);
+      });
+    }
 
     const activeList = [];
     activeIcaos.forEach(icao => {
@@ -158,7 +216,7 @@ export const activeYearAirports = derived(
 
 // Detalhamento do aeroporto atualmente selecionado para o painel lateral
 export const selectedAirportDetails = derived(
-  [rawAirports, selectedAirport, selectedYear, currentRoutes],
+  [rawAirports, selectedAirport, selectedYear, filteredRoutes],
   ([$airports, $selectedIcao, $year, $routes]) => {
     if (!$selectedIcao || !$airports[$selectedIcao]) return null;
 
@@ -174,7 +232,7 @@ export const selectedAirportDetails = derived(
       top_destinations: []
     };
 
-    // Conexões ativas diretas a partir e para este nó
+    // Conexões ativas diretas a partir e para este nó dentro do subconjunto filtrado
     const outgoing = $routes.filter(r => r.orig === $selectedIcao);
     const incoming = $routes.filter(r => r.dest === $selectedIcao);
 

@@ -3,6 +3,23 @@ import { writable, derived } from 'svelte/store';
 // Ano selecionado na linha do tempo (2000 a 2026)
 export const selectedYear = writable(2024);
 
+// Escala discreta de frequência operacional (7 níveis: índices 0 a 6)
+export const FREQUENCY_LEVELS = [
+  { label: '1/ano', min: 1, text: '1 voo por ano (1+ voos/ano)', meaning: 'Todas as operações registradas (inclui charters e testes)' },
+  { label: '1/mês', min: 12, text: '1 voo por mês (12+ voos/ano)', meaning: 'Rotas sazonais e de demanda turística esporádica' },
+  { label: '1/sem', min: 52, text: '1 voo por semana (52+ voos/ano)', meaning: 'Conexões regulares semanais' },
+  { label: '2/sem', min: 104, text: '2 voos por semana (104+ voos/ano)', meaning: 'Malha regional estável' },
+  { label: '1/dia', min: 365, text: '1 voo por dia (365+ voos/ano)', meaning: 'Voos diários contínuos (linhas comerciais troncos)' },
+  { label: '4/dia', min: 1460, text: '4 voos por dia (1.460+ voos/ano)', meaning: 'Conexões de alta densidade entre polos econômicos' },
+  { label: '20/dia', min: 7300, text: '20 voos por dia (7.300+ voos/ano)', meaning: 'Corredores de altíssima frequência (ex.: Rio-SP)' }
+];
+
+// Limiar de frequência selecionado (índice 0 a 6, padrão 3 -> 104 voos/ano)
+export const minFlightThresholdIndex = writable(3);
+
+// Filtro de escopo geográfico: apenas voos domésticos (origem e destino no Brasil)
+export const onlyDomestic = writable(true);
+
 // Estado da animação de reprodução histórica
 export const isPlaying = writable(false);
 export const playbackSpeed = writable(1400); // ms por safra anual
@@ -19,11 +36,18 @@ export const metricMode = writable('flights');
 // Tema da aplicação: 'dark' | 'light'
 export const theme = writable('dark');
 
-// Alvo de câmera para transição suave [lon, lat, zoom]
+// Alvo de câmera para transição suave [lon, lat, zoom] ou enquadramento de bounds [[minLon, minLat], [maxLon, maxLat]]
 export const cameraTarget = writable(null);
+export const cameraBounds = writable(null);
 
 // Objeto sob o cursor (aeroporto ou rota) para exibição de tooltip
 export const hoveredObject = writable(null);
+
+// --- Novos Estados: Módulo de Busca e Otimização de Rotas Multi-Escala ---
+export const isRoutePlannerOpen = writable(false);
+export const plannedRouteOrigin = writable('SBPK'); // Default de partida
+export const plannedRouteDest = writable('SBEG');   // Default de chegada
+export const activePlannedRoute = writable(null);    // Objeto da opção de rota ativa no mapa
 
 // --- Novos Estados: Análise de Resiliência & Simulação de Falhas ---
 export const isResilienceMode = writable(false);
