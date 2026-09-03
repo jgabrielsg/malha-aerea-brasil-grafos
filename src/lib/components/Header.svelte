@@ -99,7 +99,7 @@
   <!-- Barra de Topo Verde/Amarelo Estilo Gov.br -->
   <div class="h-1 bg-gradient-to-r from-gov-green via-yellow-400 to-gov-blue"></div>
 
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center justify-between gap-3">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center justify-between gap-3 min-w-0">
     <!-- Identificação do Projeto -->
     <div class="flex items-center gap-3">
       <div class="w-10 h-10 rounded-lg bg-gov-blue dark:bg-dark-accent/20 border border-gov-blue/30 dark:border-dark-accent/40 flex items-center justify-center text-white dark:text-dark-accent shadow-sm">
