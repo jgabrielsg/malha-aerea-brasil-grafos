@@ -75,114 +75,67 @@
 <!-- PAINEL PRINCIPAL -->
 <!-- ============================================================= -->
 
-<div class="bg-white/90 dark:bg-dark-surface/90 backdrop-blur border border-gray-200 dark:border-dark-border rounded-xl shadow-lg p-3 sm:p-4 transition-colors">
-
-  <div class="flex flex-col gap-2.5">
-
+<div class="bg-white/90 dark:bg-dark-surface/90 backdrop-blur border border-gray-200 dark:border-dark-border rounded-xl shadow-sm hover:shadow-md p-2.5 px-3 transition-all">
+  <div class="flex flex-col gap-2">
 
     <!-- ========================================================= -->
-    <!-- LINHA SUPERIOR -->
+    <!-- LINHA SUPERIOR COMPACTA -->
     <!-- ========================================================= -->
 
-    <div
-      class="flex items-center justify-between gap-3 -m-1 p-1"
-    >
+    <div class="flex items-center justify-between gap-2">
 
-
-      <!-- ======================================================= -->
-      <!-- CONTROLES DE REPRODUÇÃO -->
-      <!-- ======================================================= -->
-
-      <div class="flex items-center gap-1.5">
-
-
+      <!-- Controles de reprodução -->
+      <div class="flex items-center gap-1">
         <!-- Ano anterior -->
         <button
           type="button"
           onclick={(event) => stepYear(-1, event)}
-          class="p-1.5 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-card hover:text-gray-900 dark:hover:text-white transition-colors"
+          class="p-1 rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-card hover:text-gray-900 dark:hover:text-white transition-colors"
           title="Ano Anterior"
         >
-
-          <Icon
-            name="chevronLeft"
-            class="w-5 h-5"
-          />
-
+          <Icon name="chevronLeft" class="w-4 h-4" />
         </button>
-
 
         <!-- Play / Pause -->
         <button
           type="button"
           onclick={togglePlay}
-          class="flex items-center justify-center w-9 h-9 rounded-lg bg-gov-blue dark:bg-dark-accent text-white dark:text-dark-bg font-semibold shadow-md hover:bg-gov-blue-dark dark:hover:bg-sky-400 transition-all"
+          class="flex items-center justify-center w-7 h-7 rounded-lg bg-gov-blue dark:bg-dark-accent text-white dark:text-dark-bg font-semibold shadow hover:bg-gov-blue-dark dark:hover:bg-sky-400 transition-all"
           title={$isPlaying ? 'Pausar Reprodução' : 'Reproduzir Evolução Histórica (2000-2026)'}
         >
-
           {#if $isPlaying}
-
-            <Icon
-              name="pause"
-              class="w-4 h-4"
-            />
-
+            <Icon name="pause" class="w-3.5 h-3.5" />
           {:else}
-
-            <Icon
-              name="play"
-              class="w-4 h-4 ml-0.5"
-            />
-
+            <Icon name="play" class="w-3.5 h-3.5 ml-0.5" />
           {/if}
-
         </button>
-
 
         <!-- Próximo ano -->
         <button
           type="button"
           onclick={(event) => stepYear(1, event)}
-          class="p-1.5 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-card hover:text-gray-900 dark:hover:text-white transition-colors"
+          class="p-1 rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-card hover:text-gray-900 dark:hover:text-white transition-colors"
           title="Próximo Ano"
         >
-
-          <Icon
-            name="chevronRight"
-            class="w-5 h-5"
-          />
-
+          <Icon name="chevronRight" class="w-4 h-4" />
         </button>
-
       </div>
 
-
-      <!-- ======================================================= -->
-      <!-- ÁREA CLICÁVEL DE EXPANSÃO -->
-      <!-- ======================================================= -->
-
+      <!-- Área Clicável de Expansão e Ano -->
       <div
-        class="flex items-center gap-2 px-3 py-1.5 rounded-lg cursor-pointer hover:bg-gray-50/50 dark:hover:bg-dark-card/30 transition-colors"
+        class="flex items-center gap-1.5 px-2 py-0.5 rounded-lg cursor-pointer hover:bg-gray-100/60 dark:hover:bg-dark-card/40 transition-colors select-none"
         onclick={toggleExpanded}
-        title={isExpanded ? 'Clique para ocultar os detalhes' : 'Clique para mostrar os detalhes'}
+        title={isExpanded ? 'Clique para ocultar detalhes da safra' : 'Clique para exibir slider e marcos históricos'}
       >
-
-        <span class="text-xs font-mono font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+        <span class="text-[10px] font-mono font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
           Safra
         </span>
-
-        <span class="text-2xl sm:text-3xl font-mono font-extrabold text-gov-blue dark:text-dark-accent tracking-tight">
+        <span class="text-xl font-mono font-black text-gov-blue dark:text-dark-accent tracking-tight">
           {$selectedYear}
         </span>
-
-        <!-- Indicador de expansão -->
-        <span
-          class="text-gray-400 dark:text-gray-500 text-sm font-bold leading-none ml-0.5"
-          aria-hidden="true"
-        >
+        <span class="text-gray-400 dark:text-gray-500 text-xs font-bold leading-none ml-0.5">
           {isExpanded ? '▴' : '▾'}
         </span>
-
       </div>
 
     </div>

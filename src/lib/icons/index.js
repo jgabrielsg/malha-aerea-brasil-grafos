@@ -168,5 +168,40 @@ export const icons = {
   ],
   navigation: [
     ['polygon', { points: '3 11 22 2 13 21 11 13 3 11' }]
+  ],
+  camera: [
+    ['path', { d: 'M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z' }],
+    ['circle', { cx: '12', cy: '13', r: '3' }]
+  ],
+  download: [
+    ['path', { d: 'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4' }],
+    ['polyline', { points: '7 10 12 15 17 10' }],
+    ['line', { x1: '12', x2: '12', y1: '15', y2: '3' }]
+  ],
+  maximize: [
+    ['path', { d: 'M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3' }]
+  ],
+  minimize: [
+    ['path', { d: 'M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3' }]
+  ],
+  compass: [
+    ['circle', { cx: '12', cy: '12', r: '10' }],
+    ['polygon', { points: '16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76' }]
+  ],
+  keyboard: [
+    ['rect', { width: '20', height: '14', x: '2', y: '5', rx: '2', ry: '2' }],
+    ['path', { d: 'M6 9h.01M10 9h.01M14 9h.01M18 9h.01M7 13h10' }]
+  ],
+  helpCircle: [
+    ['circle', { cx: '12', cy: '12', r: '10' }],
+    ['path', { d: 'M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3' }],
+    ['line', { x1: '12', x2: '12.01', y1: '17', y2: '17' }]
+  ],
+  copy: [
+    ['rect', { width: '14', height: '14', x: '8', y: '8', rx: '2', ry: '2' }],
+    ['path', { d: 'M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2' }]
+  ],
+  check: [
+    ['polyline', { points: '20 6 9 17 4 12' }]
   ]
 };

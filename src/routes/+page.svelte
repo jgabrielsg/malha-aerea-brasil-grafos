@@ -1,4 +1,5 @@
 <script>
+  import { onMount, onDestroy } from 'svelte';
   import Header from '$lib/components/Header.svelte';
   import Footer from '$lib/components/Footer.svelte';
   import FlightMap from '$lib/components/FlightMap.svelte';
@@ -10,11 +11,118 @@
   import StoryMode from '$lib/components/StoryMode.svelte';
   import FilterToolbar from '$lib/components/FilterToolbar.svelte';
   import RoutePlanner from '$lib/components/RoutePlanner.svelte';
+  import TopRoutesDrawer from '$lib/components/TopRoutesDrawer.svelte';
+  import KeyboardShortcutsModal from '$lib/components/KeyboardShortcutsModal.svelte';
+  import ExportModal from '$lib/components/ExportModal.svelte';
   import { isLoading, loadError } from '$lib/stores/dataStore.js';
-  import { selectedAirport, isResilienceMode, isStoryMode, isRoutePlannerOpen } from '$lib/stores/flightState.js';
+  import { 
+    selectedAirport, 
+    selectedYear,
+    minFlightThresholdIndex,
+    onlyDomestic,
+    metricMode,
+    isResilienceMode, 
+    isStoryMode, 
+    isRoutePlannerOpen,
+    isPlaying,
+    is3DMode,
+    isKeyboardHelpOpen,
+    isExportModalOpen,
+    shareToastMessage,
+    cameraTarget,
+    closeAllDrawers,
+    openExclusiveDrawer
+  } from '$lib/stores/flightState.js';
+  import { initUrlSync, syncStateToUrl } from '$lib/analytics/urlSync.js';
   import Icon from '$lib/icons/Icon.svelte';
 
   let isGapInspectorOpen = $state(false);
+
+  function handleKeyDown(event) {
+    // Ignora atalhos quando o usuário estiver digitando em campos de texto
+    const target = event.target;
+    if (target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) {
+      return;
+    }
+
+    const key = event.key;
+
+    if (key === ' ') {
+      event.preventDefault();
+      isPlaying.update(p => !p);
+    } else if (key === 'ArrowLeft') {
+      event.preventDefault();
+      selectedYear.update(y => Math.max(2000, y - 1));
+    } else if (key === 'ArrowRight') {
+      event.preventDefault();
+      selectedYear.update(y => Math.min(2026, y + 1));
+    } else if (key === 'p' || key === 'P') {
+      event.preventDefault();
+      if ($isRoutePlannerOpen) {
+        closeAllDrawers();
+      } else {
+        openExclusiveDrawer('routePlanner');
+      }
+    } else if (key === 'f' || key === 'F') {
+      event.preventDefault();
+      if ($isResilienceMode) {
+        closeAllDrawers();
+      } else {
+        openExclusiveDrawer('resilience');
+      }
+    } else if (key === 'h' || key === 'H') {
+      event.preventDefault();
+      if ($isStoryMode) {
+        closeAllDrawers();
+      } else {
+        openExclusiveDrawer('story');
+      }
+    } else if (key === 'g' || key === 'G') {
+      event.preventDefault();
+      isGapInspectorOpen = !isGapInspectorOpen;
+    } else if (key === 'r' || key === 'R') {
+      event.preventDefault();
+      cameraTarget.set([-52.0, -14.5, 4.2, $is3DMode ? 32 : 0, 0]);
+    } else if (key === 't' || key === 'T') {
+      event.preventDefault();
+      is3DMode.update(m => !m);
+    } else if (key === 'Escape') {
+      closeAllDrawers();
+      isGapInspectorOpen = false;
+      isKeyboardHelpOpen.set(false);
+      isExportModalOpen.set(false);
+    } else if (key === '?') {
+      event.preventDefault();
+      isKeyboardHelpOpen.update(h => !h);
+    }
+  }
+
+  onMount(() => {
+    initUrlSync();
+    window.addEventListener('keydown', handleKeyDown);
+  });
+
+  onDestroy(() => {
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('keydown', handleKeyDown);
+    }
+  });
+
+  // Reage a alterações de filtros e atualiza a URLSearchParams via Svelte 5 $effect
+  $effect(() => {
+    // Registra dependências reativas nas stores
+    const _y = $selectedYear;
+    const _f = $minFlightThresholdIndex;
+    const _d = $onlyDomestic;
+    const _m = $metricMode;
+    const _a = $selectedAirport;
+    const _p = $isRoutePlannerOpen;
+    const _r = $isResilienceMode;
+
+    if (_y !== undefined) {
+      syncStateToUrl();
+    }
+  });
 </script>
 
 <div class="flex flex-col h-full w-full overflow-hidden select-none">
@@ -55,7 +163,7 @@
 
       <!-- Painel Flutuante Superior: Linha do Tempo e Busca (ocultos no Modo História para dar foco total à narrativa) -->
       {#if !$isStoryMode}
-        <div class="absolute top-4 left-4 right-4 sm:right-auto sm:w-[460px] z-30 flex flex-col gap-2.5 pointer-events-none">
+        <div class="absolute top-4 left-4 right-4 sm:right-auto sm:w-[325px] z-30 flex flex-col gap-2 pointer-events-none">
           <!-- Campo de Busca -->
           <div class="pointer-events-auto">
             <SearchBox />
@@ -66,17 +174,18 @@
             <TimelineController />
           </div>
 
-          <!-- Filtros de Frequência e Escopo Doméstico -->
+          <!-- Filtros de Frequência, Escopo e Distância -->
           <div class="pointer-events-auto">
             <FilterToolbar />
           </div>
         </div>
       {/if}
 
-      <!-- Card / Botão do Inspetor de Desertos de Rota (Flutuante inferior esquerdo) -->
+      <!-- Doca Inferior Esquerda: Desertos de Rota & Top 10 Rotas (Flutuante discreto) -->
       {#if !$isStoryMode && !$isResilienceMode}
-        <div class="absolute bottom-4 left-4 z-30 pointer-events-auto">
+        <div class="absolute bottom-4 left-4 z-30 pointer-events-auto flex flex-col sm:flex-row items-start sm:items-center gap-2">
           <GapInspector bind:isOpen={isGapInspectorOpen} />
+          <TopRoutesDrawer />
         </div>
       {/if}
 
@@ -99,4 +208,27 @@
 
   <!-- Rodapé Institucional -->
   <Footer />
+
+  <!-- Modais Globais SOTA -->
+  <KeyboardShortcutsModal />
+  <ExportModal />
+
+  <!-- Toast Notification de Feedback (ex.: Link Copiado) -->
+  {#if $shareToastMessage}
+    <div class="fixed bottom-12 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl bg-gray-900/95 text-white dark:bg-dark-surface/95 dark:text-dark-accent border border-gov-blue/50 dark:border-dark-accent/50 shadow-2xl flex items-center gap-2.5 text-xs font-mono animate-slideUp">
+      <Icon name="check" class="w-4 h-4 text-emerald-400 flex-shrink-0" />
+      <span>{$shareToastMessage}</span>
+    </div>
+  {/if}
 </div>
+
+<style>
+  @keyframes slideUp {
+    from { opacity: 0; transform: translate(-50%, 12px); }
+    to { opacity: 1; transform: translate(-50%, 0); }
+  }
+  .animate-slideUp {
+    animation: slideUp 0.2s ease-out forwards;
+  }
+</style>
+

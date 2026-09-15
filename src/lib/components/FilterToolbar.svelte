@@ -2,8 +2,8 @@
   import { 
     minFlightThresholdIndex, 
     onlyDomestic, 
-    FREQUENCY_LEVELS,
-    isRoutePlannerOpen
+    selectedDistanceBracket,
+    FREQUENCY_LEVELS
   } from '$lib/stores/flightState.js';
   import { currentRoutes } from '$lib/stores/dataStore.js';
   import Icon from '$lib/icons/Icon.svelte';
@@ -26,58 +26,48 @@
   function selectLevel(idx) {
     minFlightThresholdIndex.set(idx);
   }
+
+  function selectDistance(dist) {
+    selectedDistanceBracket.set(dist);
+  }
 </script>
 
-<div class="bg-white/90 dark:bg-dark-surface/90 backdrop-blur border border-gray-200 dark:border-dark-border rounded-xl shadow-lg p-3 sm:p-4 transition-colors">
+<div class="bg-white/90 dark:bg-dark-surface/90 backdrop-blur border border-gray-200 dark:border-dark-border rounded-xl shadow-sm hover:shadow-md p-2.5 px-3 transition-all">
+  <div class="flex flex-col gap-2">
 
-  <div class="flex flex-col gap-3">
+    <!-- Cabeçalho Compacto (Barra recolhida) -->
+    <div class="flex items-center justify-between gap-2">
 
-    <!-- Cabeçalho -->
-    <div class="flex items-center justify-between gap-3">
+      <!-- Botão Filtros -->
+      <button
+        type="button"
+        onclick={() => filtersOpen = !filtersOpen}
+        class="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-200 font-mono hover:text-gov-blue dark:hover:text-dark-accent transition-colors select-none"
+        aria-expanded={filtersOpen}
+        aria-controls="frequency-filters"
+      >
+        <div class="w-5 h-5 rounded-md bg-gov-blue/10 dark:bg-dark-accent/15 flex items-center justify-center text-gov-blue dark:text-dark-accent">
+          <Icon name="sliders" class="w-3 h-3" />
+        </div>
 
-      <!-- Título e Itinerários -->
-      <div class="flex items-center gap-2">
+        <span>Filtros</span>
 
-        <!-- Botão Filtros -->
-        <button
-          type="button"
-          onclick={() => filtersOpen = !filtersOpen}
-          class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-200 font-mono hover:text-gov-blue dark:hover:text-dark-accent transition-colors"
-          aria-expanded={filtersOpen}
-          aria-controls="frequency-filters"
-        >
-          <div class="w-6 h-6 rounded-lg bg-gov-blue/10 dark:bg-dark-accent/15 flex items-center justify-center text-gov-blue dark:text-dark-accent">
-            <Icon name="sliders" class="w-3.5 h-3.5" />
-          </div>
+        <span class="text-[10px] px-1 py-0.2 rounded bg-gov-blue/10 dark:bg-dark-accent/15 text-gov-blue dark:text-dark-accent font-semibold lowercase">
+          {activeLevel.label}
+        </span>
 
-          <span>Filtros</span>
+        <span class="text-[9px] text-gray-400 dark:text-gray-500">
+          {filtersOpen ? '▲' : '▼'}
+        </span>
+      </button>
 
-          <span class="text-[9px] text-gray-400 dark:text-gray-500">
-            {filtersOpen ? '▲' : '▼'}
-          </span>
-        </button>
-
-        <!-- Itinerários -->
-        <button
-          type="button"
-          onclick={() => isRoutePlannerOpen.update(v => !v)}
-          class="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono font-medium transition-colors {$isRoutePlannerOpen ? 'bg-gov-blue dark:bg-dark-accent text-white dark:text-dark-bg font-bold shadow-sm' : 'bg-gov-blue/10 dark:bg-dark-accent/15 text-gov-blue dark:text-dark-accent hover:bg-gov-blue/20'}"
-          title={$isRoutePlannerOpen ? 'Fechar Planejador de Rotas' : 'Abrir Planejador de Rotas Multi-Escala'}
-        >
-          <Icon name="route" class="w-3 h-3" />
-          <span>Itinerários</span>
-        </button>
-
-      </div>
-
-      <!-- Switch de rotas nacionais -->
-      <div class="flex items-center gap-2">
-
+      <!-- Switch de Rotas Nacionais (Apenas BR) -->
+      <div class="flex items-center gap-1.5">
         <label
           for="toggle-domestic"
-          class="text-xs font-medium text-gray-700 dark:text-gray-300 cursor-pointer select-none"
+          class="text-xs font-medium text-gray-600 dark:text-gray-300 cursor-pointer select-none"
         >
-          Apenas rotas nacionais
+          Apenas BR
         </label>
 
         <button
@@ -86,103 +76,129 @@
           role="switch"
           aria-checked={$onlyDomestic}
           onclick={toggleDomestic}
-          class="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none {$onlyDomestic ? 'bg-gov-blue dark:bg-dark-accent' : 'bg-gray-300 dark:bg-gray-700'}"
-          title={$onlyDomestic ? 'Filtrando apenas conexões entre aeroportos nacionais (BR ↔ BR)' : 'Exibindo malha nacional e conexões internacionais'}
+          class="relative inline-flex h-4 w-7 flex-shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out focus:outline-none {$onlyDomestic ? 'bg-gov-blue dark:bg-dark-accent' : 'bg-gray-300 dark:bg-gray-700'}"
+          title={$onlyDomestic ? 'Filtrando apenas aeroportos brasileiros (BR ↔ BR)' : 'Exibindo rotas nacionais e internacionais'}
         >
           <span
             aria-hidden="true"
-            class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {$onlyDomestic ? 'translate-x-4 dark:bg-dark-bg' : 'translate-x-0'}"
+            class="pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {$onlyDomestic ? 'translate-x-3 dark:bg-dark-bg' : 'translate-x-0'}"
           ></span>
         </button>
-
       </div>
     </div>
 
-
-    <!-- Conteúdo dos filtros -->
+    <!-- Conteúdo dos Filtros (Expansível) -->
     {#if filtersOpen}
-
       <div
         id="frequency-filters"
-        class="flex flex-col gap-1.5 border-t border-gray-100 dark:border-dark-border/60 pt-3"
+        class="flex flex-col gap-2.5 border-t border-gray-100 dark:border-dark-border/60 pt-2.5 animate-fadeIn"
       >
-
-        <!-- Linha Informativa -->
-        <div class="flex items-center justify-between gap-2">
-
-          <div class="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400">
-            <Icon name="activity" class="w-3.5 h-3.5 text-amber-500" />
-            <span class="font-medium">Frequência mínima:</span>
+        <!-- 1. Frequência Operacional -->
+        <div class="flex flex-col gap-1">
+          <div class="flex items-center justify-between gap-1.5 text-[11px]">
+            <div class="flex items-center gap-1 text-gray-600 dark:text-gray-400 font-medium">
+              <Icon name="activity" class="w-3 h-3 text-amber-500" />
+              <span>Frequência mínima:</span>
+            </div>
+            <span class="font-mono text-[10px] font-bold text-gov-blue dark:text-dark-accent">
+              {activeLevel.text}
+            </span>
           </div>
 
-          <!-- Badge -->
-          <div class="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-gov-blue/10 dark:bg-dark-accent/15 border border-gov-blue/20 dark:border-dark-accent/30 text-gov-blue dark:text-dark-accent font-mono text-xs font-bold">
-            <span>{activeLevel.text}</span>
+          <div class="flex items-center justify-between text-[10px] text-gray-400">
+            <span class="truncate italic">{activeLevel.meaning}</span>
+            <span class="font-mono flex-shrink-0 ml-2">{$currentRoutes.length.toLocaleString('pt-BR')} rotas</span>
           </div>
 
+          <!-- Slider de 7 degraus -->
+          <div class="relative flex items-center mt-0.5">
+            <input
+              type="range"
+              min="0"
+              max="6"
+              step="1"
+              value={$minFlightThresholdIndex}
+              oninput={handleSliderInput}
+              class="w-full h-1.5 bg-gray-200 dark:bg-dark-card rounded-lg appearance-none cursor-pointer accent-gov-blue dark:accent-dark-accent focus:outline-none"
+              aria-label="Frequência mínima de voos"
+            />
+          </div>
+
+          <!-- Ticks -->
+          <div class="flex justify-between text-[9px] font-mono px-0.5 select-none text-gray-400 dark:text-gray-500">
+            {#each FREQUENCY_LEVELS as level, idx}
+              <button
+                type="button"
+                onclick={() => selectLevel(idx)}
+                class="hover:text-gov-blue dark:hover:text-dark-accent transition-colors {idx === $minFlightThresholdIndex ? 'font-bold text-gov-blue dark:text-dark-accent' : ''}"
+                title="{level.text} — {level.meaning}"
+              >
+                {level.label}
+              </button>
+            {/each}
+          </div>
         </div>
 
+        <!-- 2. Filtro de Extensão de Voo (Distance Brackets) -->
+        <div class="flex flex-col gap-1 pt-2 border-t border-gray-100 dark:border-dark-border/40">
+          <div class="flex items-center justify-between text-[11px] text-gray-600 dark:text-gray-400">
+            <div class="flex items-center gap-1 font-medium">
+              <Icon name="compass" class="w-3 h-3 text-sky-500" />
+              <span>Extensão da rota:</span>
+            </div>
+            <span class="font-mono text-[10px] text-gray-500 dark:text-gray-400">
+              {$selectedDistanceBracket === 'all' ? 'Todas' : $selectedDistanceBracket === 'short' ? '<600 km' : $selectedDistanceBracket === 'medium' ? '600–1.500 km' : '>1.500 km'}
+            </span>
+          </div>
 
-        <!-- Significado e quantidade de rotas -->
-        <div class="flex items-center justify-between text-[11px] text-gray-500 dark:text-gray-400">
-
-          <span class="truncate italic">
-            {activeLevel.meaning}
-          </span>
-
-          <span class="font-mono text-[10px] text-gray-400 dark:text-gray-500 flex-shrink-0 ml-2">
-            {$currentRoutes.length.toLocaleString('pt-BR')} rotas
-          </span>
-
-        </div>
-
-
-        <!-- Slider -->
-        <div class="relative flex items-center mt-1">
-
-          <input
-            type="range"
-            min="0"
-            max="6"
-            step="1"
-            value={$minFlightThresholdIndex}
-            oninput={handleSliderInput}
-            class="w-full h-2 bg-gray-200 dark:bg-dark-card rounded-lg appearance-none cursor-pointer accent-gov-blue dark:accent-dark-accent focus:outline-none"
-            aria-label="Controle de frequência mínima de voos"
-          />
-
-        </div>
-
-
-        <!-- Ticks -->
-        <div class="flex justify-between text-[10px] font-mono px-0.5 mt-0.5 select-none">
-
-          {#each FREQUENCY_LEVELS as level, idx}
-
+          <div class="grid grid-cols-4 gap-1 text-[10px] font-mono mt-0.5">
             <button
               type="button"
-              onclick={() => selectLevel(idx)}
-              class="flex flex-col items-center group transition-colors {idx === $minFlightThresholdIndex ? 'font-bold text-gov-blue dark:text-dark-accent' : 'text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}"
-              title="{level.text} — {level.meaning}"
+              onclick={() => selectDistance('all')}
+              class="py-1 rounded border text-center transition-all {$selectedDistanceBracket === 'all' ? 'bg-gov-blue dark:bg-dark-accent text-white dark:text-dark-bg font-bold border-transparent shadow-xs' : 'bg-gray-100 dark:bg-dark-card text-gray-600 dark:text-gray-400 border-gray-200 dark:border-dark-border hover:bg-gray-200'}"
+              title="Todas as distâncias de voo"
             >
-
-              <span
-                class="w-1 h-1 rounded-full mb-1 transition-colors {idx === $minFlightThresholdIndex ? 'bg-gov-blue dark:bg-dark-accent ring-2 ring-gov-blue/30 dark:ring-dark-accent/30' : 'bg-gray-300 dark:bg-dark-border group-hover:bg-gray-400 dark:group-hover:bg-gray-500'}"
-              ></span>
-
-              <span class="leading-none">
-                {level.label}
-              </span>
-
+              Todas
             </button>
-
-          {/each}
-
+            <button
+              type="button"
+              onclick={() => selectDistance('short')}
+              class="py-1 rounded border text-center transition-all {$selectedDistanceBracket === 'short' ? 'bg-gov-blue dark:bg-dark-accent text-white dark:text-dark-bg font-bold border-transparent shadow-xs' : 'bg-gray-100 dark:bg-dark-card text-gray-600 dark:text-gray-400 border-gray-200 dark:border-dark-border hover:bg-gray-200'}"
+              title="Voos regionais de curto alcance (< 600 km)"
+            >
+              &lt; 600km
+            </button>
+            <button
+              type="button"
+              onclick={() => selectDistance('medium')}
+              class="py-1 rounded border text-center transition-all {$selectedDistanceBracket === 'medium' ? 'bg-gov-blue dark:bg-dark-accent text-white dark:text-dark-bg font-bold border-transparent shadow-xs' : 'bg-gray-100 dark:bg-dark-card text-gray-600 dark:text-gray-400 border-gray-200 dark:border-dark-border hover:bg-gray-200'}"
+              title="Voos de médio curso (600 a 1.500 km)"
+            >
+              600-1.5k
+            </button>
+            <button
+              type="button"
+              onclick={() => selectDistance('long')}
+              class="py-1 rounded border text-center transition-all {$selectedDistanceBracket === 'long' ? 'bg-gov-blue dark:bg-dark-accent text-white dark:text-dark-bg font-bold border-transparent shadow-xs' : 'bg-gray-100 dark:bg-dark-card text-gray-600 dark:text-gray-400 border-gray-200 dark:border-dark-border hover:bg-gray-200'}"
+              title="Voos de longo curso / transcontinentais (> 1.500 km)"
+            >
+              &gt; 1.500km
+            </button>
+          </div>
         </div>
 
       </div>
-
     {/if}
 
   </div>
 </div>
+
+<style>
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(2px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animate-fadeIn {
+    animation: fadeIn 0.15s ease-out forwards;
+  }
+</style>

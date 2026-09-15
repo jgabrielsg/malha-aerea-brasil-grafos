@@ -176,6 +176,13 @@
     isDestDropdownOpen = false;
   }
 
+  function setPreset(origIcao, destIcao) {
+    const origAir = $rawAirports[origIcao];
+    const destAir = $rawAirports[destIcao];
+    if (origAir) handleSelectOrigin(origAir);
+    if (destAir) handleSelectDest(destAir);
+  }
+
   function applySuggestedThreshold() {
     if (feasibilitySuggestion) {
       minFlightThresholdIndex.set(feasibilitySuggestion.viableIndex);
@@ -336,6 +343,35 @@
           </div>
         {/if}
       </div>
+    </div>
+
+    <!-- Presets Rápidos de Pares de Cidades -->
+    <div class="flex items-center gap-1.5 overflow-x-auto text-[10px] font-mono pt-1">
+      <span class="text-gray-400 dark:text-gray-500 font-semibold uppercase text-[9px] flex-shrink-0">Exemplos:</span>
+      <button
+        type="button"
+        onclick={() => setPreset('SBRJ', 'SBSP')}
+        class="px-2 py-0.5 rounded bg-gray-200/80 dark:bg-dark-surface border border-gray-300/60 dark:border-dark-border text-gray-700 dark:text-gray-300 hover:bg-gov-blue/10 dark:hover:bg-dark-accent/15 hover:text-gov-blue dark:hover:text-dark-accent transition-colors flex-shrink-0"
+        title="Ponte Aérea Rio-SP"
+      >
+        Rio ⇄ SP
+      </button>
+      <button
+        type="button"
+        onclick={() => setPreset('SBBR', 'SBGR')}
+        class="px-2 py-0.5 rounded bg-gray-200/80 dark:bg-dark-surface border border-gray-300/60 dark:border-dark-border text-gray-700 dark:text-gray-300 hover:bg-gov-blue/10 dark:hover:bg-dark-accent/15 hover:text-gov-blue dark:hover:text-dark-accent transition-colors flex-shrink-0"
+        title="Tronco Brasília - Guarulhos"
+      >
+        BSB ⇄ GRU
+      </button>
+      <button
+        type="button"
+        onclick={() => setPreset('SBPK', 'SBEG')}
+        class="px-2 py-0.5 rounded bg-gray-200/80 dark:bg-dark-surface border border-gray-300/60 dark:border-dark-border text-gray-700 dark:text-gray-300 hover:bg-gov-blue/10 dark:hover:bg-dark-accent/15 hover:text-gov-blue dark:hover:text-dark-accent transition-colors flex-shrink-0"
+        title="Diagonal Nacional Sul - Amazônia"
+      >
+        Pelotas ⇄ Manaus
+      </button>
     </div>
   </div>
 

@@ -1,6 +1,12 @@
 <script>
   import { currentGapsData } from '$lib/stores/dataStore.js';
-  import { selectedGap, selectedAirport, selectedYear, cameraTarget } from '$lib/stores/flightState.js';
+  import { 
+    selectedGap, 
+    selectedAirport, 
+    selectedYear, 
+    cameraTarget,
+    closeAllDrawers 
+  } from '$lib/stores/flightState.js';
   import { rawAirports } from '$lib/stores/dataStore.js';
   import Icon from '$lib/icons/Icon.svelte';
 
@@ -49,7 +55,7 @@
 {#if !isOpen}
   <button
     type="button"
-    onclick={() => isOpen = true}
+    onclick={() => { closeAllDrawers(); isOpen = true; }}
     class="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/95 dark:bg-dark-surface/95 backdrop-blur border border-gray-200 dark:border-dark-border shadow-lg text-xs hover:border-amber-500/50 transition-all text-left group"
   >
     <div class="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-500 border border-amber-500/30 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">

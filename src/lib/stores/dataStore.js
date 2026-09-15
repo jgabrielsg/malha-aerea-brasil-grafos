@@ -6,6 +6,7 @@ import {
   selectedGap,
   minFlightThresholdIndex,
   onlyDomestic,
+  selectedDistanceBracket,
   FREQUENCY_LEVELS
 } from './flightState.js';
 
@@ -90,10 +91,11 @@ export const rawYearRoutes = derived(
  * 1. Filtro do ano ativo (selectedYear via rawYearRoutes)
  * 2. Filtro geográfico (onlyDomestic: origAirport.country === 'BR' && destAirport.country === 'BR')
  * 3. Filtro de frequência mínima operacional (flights >= FREQUENCY_LEVELS[minFlightThresholdIndex].min)
+ * 4. Filtro de extensão/distância da rota (selectedDistanceBracket)
  */
 export const filteredRoutes = derived(
-  [rawYearRoutes, rawAirports, onlyDomestic, minFlightThresholdIndex],
-  ([$yearRoutes, $airports, $onlyDomestic, $thresholdIdx]) => {
+  [rawYearRoutes, rawAirports, onlyDomestic, minFlightThresholdIndex, selectedDistanceBracket],
+  ([$yearRoutes, $airports, $onlyDomestic, $thresholdIdx, $distBracket]) => {
     if (!$yearRoutes || $yearRoutes.length === 0) return [];
 
     const minFlights = FREQUENCY_LEVELS[$thresholdIdx]?.min ?? 1;
@@ -117,6 +119,14 @@ export const filteredRoutes = derived(
         return false;
       }
 
+      // 4. Filtro de Extensão de Voo (Distance Bracket)
+      if ($distBracket && $distBracket !== 'all') {
+        const dKm = route.dist_km || 0;
+        if ($distBracket === 'short' && dKm >= 600) return false;
+        if ($distBracket === 'medium' && (dKm < 600 || dKm > 1500)) return false;
+        if ($distBracket === 'long' && dKm <= 1500) return false;
+      }
+
       return true;
     });
   }
@@ -125,6 +135,34 @@ export const filteredRoutes = derived(
 // Aliases para compatibilidade total com o ecossistema e visualizador Deck.gl
 export const visibleRoutes = filteredRoutes;
 export const currentRoutes = filteredRoutes;
+
+// Top 10 rotas com maior número de decolagens sob os filtros correntes
+export const topTenRoutes = derived(
+  [filteredRoutes, rawAirports],
+  ([$routes, $airports]) => {
+    if (!$routes || $routes.length === 0) return [];
+
+    return [...$routes]
+      .sort((a, b) => (b.flights || 0) - (a.flights || 0))
+      .slice(0, 10)
+      .map((r, idx) => {
+        const origAir = $airports[r.orig] || {};
+        const destAir = $airports[r.dest] || {};
+        return {
+          rank: idx + 1,
+          ...r,
+          origCity: origAir.city || r.orig,
+          destCity: destAir.city || r.dest,
+          origState: origAir.state || origAir.country || '',
+          destState: destAir.state || destAir.country || '',
+          origName: origAir.name || r.orig,
+          destName: destAir.name || r.dest,
+          origCoords: origAir.lon && origAir.lat ? [origAir.lon, origAir.lat] : null,
+          destCoords: destAir.lon && destAir.lat ? [destAir.lon, destAir.lat] : null
+        };
+      });
+  }
+);
 
 // Lacunas de capitais no ano selecionado
 export const currentGapsData = derived(

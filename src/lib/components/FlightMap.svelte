@@ -37,6 +37,7 @@
   let MapboxOverlay = null;
   let ArcLayer = null;
   let ScatterplotLayer = null;
+  let PathLayer = null;
 
   // Estilos de Mapa sem necessidade de chaves de API
   const STYLES = {
@@ -463,8 +464,69 @@
       }
     });
 
-    const layers = [backgroundArcLayer, foregroundArcLayer, scatterLayer];
+    // 4. Camada de Anéis Geodésicos de Alcance Radar (Apenas se houver aeroporto em foco)
+    const rangeRingsData = [];
+    if (PathLayer && selectedIcao && airportsMap[selectedIcao]) {
+      const air = airportsMap[selectedIcao];
+      const isDarkTheme = $theme === 'dark';
+      const ringConfigs = [
+        { dist: 500, color: isDarkTheme ? [56, 189, 248, 120] : [19, 81, 180, 110] },
+        { dist: 1000, color: isDarkTheme ? [56, 189, 248, 75] : [19, 81, 180, 70] },
+        { dist: 2000, color: isDarkTheme ? [56, 189, 248, 40] : [19, 81, 180, 40] }
+      ];
+
+      ringConfigs.forEach(rc => {
+        rangeRingsData.push({
+          id: `ring-${selectedIcao}-${rc.dist}`,
+          dist: rc.dist,
+          color: rc.color,
+          path: generateGeodesicCircle(air.lon, air.lat, rc.dist)
+        });
+      });
+    }
+
+    const rangeRingsLayer = PathLayer ? new PathLayer({
+      id: 'airport-range-rings',
+      data: rangeRingsData,
+      pickable: false,
+      widthMinPixels: 1,
+      widthMaxPixels: 2,
+      getWidth: 1.2,
+      getPath: d => d.path,
+      getColor: d => d.color,
+      dashJustified: true,
+      getDashArray: [8, 4],
+      updateTriggers: {
+        getColor: [$theme],
+        getPath: [selectedIcao]
+      }
+    }) : null;
+
+    const layers = [backgroundArcLayer, foregroundArcLayer, rangeRingsLayer, scatterLayer].filter(Boolean);
     return layers;
+  }
+
+  function generateGeodesicCircle(lon0, lat0, distKm, numPoints = 64) {
+    const R = 6371;
+    const delta = distKm / R;
+    const lat0Rad = (lat0 * Math.PI) / 180;
+    const lon0Rad = (lon0 * Math.PI) / 180;
+    const path = [];
+
+    for (let i = 0; i <= numPoints; i++) {
+      const theta = (i / numPoints) * 2 * Math.PI;
+      const sinLat = Math.sin(lat0Rad) * Math.cos(delta) + Math.cos(lat0Rad) * Math.sin(delta) * Math.cos(theta);
+      const latRad = Math.asin(sinLat);
+      const y = Math.sin(theta) * Math.sin(delta) * Math.cos(lat0Rad);
+      const x = Math.cos(delta) - Math.sin(lat0Rad) * sinLat;
+      const lonRad = lon0Rad + Math.atan2(y, x);
+
+      const latDeg = (latRad * 180) / Math.PI;
+      let lonDeg = (lonRad * 180) / Math.PI;
+      lonDeg = ((lonDeg + 540) % 360) - 180;
+      path.push([lonDeg, latDeg]);
+    }
+    return path;
   }
 
   function updateDeckLayers() {
@@ -485,6 +547,7 @@
     MapboxOverlay = mapboxModule.MapboxOverlay;
     ArcLayer = layersModule.ArcLayer;
     ScatterplotLayer = layersModule.ScatterplotLayer;
+    PathLayer = layersModule.PathLayer;
 
     // Inicialização do MapLibre GL
     mapInstance = new maplibregl.Map({

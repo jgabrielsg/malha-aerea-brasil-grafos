@@ -61,6 +61,57 @@ export const currentStoryIndex = writable(0);
 // --- Novos Estados: Animação de Fluxo Dinâmico de Tráfego ---
 export const enableFlowAnimation = writable(true);
 
+// --- Novos Estados: Filtro de Extensão de Voo (Distance Brackets) ---
+// 'all' | 'short' (<600km) | 'medium' (600-1500km) | 'long' (>1500km)
+export const selectedDistanceBracket = writable('all');
+
+// --- Novos Estados: Painel de Top 10 Rotas do Ano ---
+export const isTopRoutesOpen = writable(false);
+
+// --- Novos Estados SOTA: Controles de Câmera HUD, Modais e Compartilhamento ---
+export const is3DMode = writable(true); // true = 3D com pitch e bearing | false = 2D nadir
+export const isKeyboardHelpOpen = writable(false); // Modal de atalhos de teclado
+export const isExportModalOpen = writable(false);   // Modal de exportação de dados e mapa
+export const shareToastMessage = writable(null);    // Mensagem temporária de feedback de link
+
+/**
+ * Fecha todos os painéis laterais e modos modais para garantir zero sobreposição (Acordeão)
+ */
+export function closeAllDrawers() {
+  selectedAirport.set(null);
+  isRoutePlannerOpen.set(false);
+  activePlannedRoute.set(null);
+  isResilienceMode.set(false);
+  simulatedClosedAirport.set(null);
+  isStoryMode.set(false);
+  selectedGap.set(null);
+  isTopRoutesOpen.set(false);
+}
+
+/**
+ * Abre um painel lateral específico garantindo o fechamento imediato de todos os outros
+ * @param {'routePlanner' | 'resilience' | 'story' | 'airport' | 'gap' | 'topRoutes'} drawerName
+ */
+export function openExclusiveDrawer(drawerName) {
+  if (drawerName !== 'airport') selectedAirport.set(null);
+  if (drawerName !== 'routePlanner') {
+    isRoutePlannerOpen.set(false);
+    activePlannedRoute.set(null);
+  }
+  if (drawerName !== 'resilience') {
+    isResilienceMode.set(false);
+    simulatedClosedAirport.set(null);
+  }
+  if (drawerName !== 'story') isStoryMode.set(false);
+  if (drawerName !== 'gap') selectedGap.set(null);
+  if (drawerName !== 'topRoutes') isTopRoutesOpen.set(false);
+
+  if (drawerName === 'routePlanner') isRoutePlannerOpen.set(true);
+  if (drawerName === 'resilience') isResilienceMode.set(true);
+  if (drawerName === 'story') isStoryMode.set(true);
+  if (drawerName === 'topRoutes') isTopRoutesOpen.set(true);
+}
+
 // Marcos históricos da aviação brasileira para anotação na timeline
 export const HISTORICAL_MILESTONES = {
   2000: 'Início da série unificada dos microdados da ANAC/DAC',

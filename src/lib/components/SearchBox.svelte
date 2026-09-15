@@ -42,7 +42,7 @@
   }
 </script>
 
-<div class="relative w-full max-w-sm">
+<div class="relative w-full">
   <div class="relative flex items-center">
     <Icon name="search" class="absolute left-3 w-4 h-4 text-gray-400 dark:text-gray-500 pointer-events-none" />
     <input
