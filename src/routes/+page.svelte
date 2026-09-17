@@ -178,7 +178,7 @@
 
       <!-- Painel Flutuante Superior: Linha do Tempo e Busca (ocultos no Modo História para dar foco total à narrativa) -->
       {#if !$isStoryMode}
-        <div class="absolute top-4 left-4 right-4 sm:right-auto sm:w-[325px] z-30 flex flex-col gap-2 pointer-events-none">
+        <div class="absolute top-3 left-3 right-3 sm:top-4 sm:left-4 sm:right-auto sm:w-[325px] z-30 flex flex-col gap-2 pointer-events-none">
           <!-- Campo de Busca -->
           <div class="pointer-events-auto">
             <SearchBox />
@@ -198,7 +198,7 @@
 
       <!-- Doca Inferior Esquerda: Desertos de Rota & Top 10 Rotas (Flutuante discreto) -->
       {#if !$isStoryMode && !$isResilienceMode}
-        <div class="absolute bottom-4 left-4 z-30 pointer-events-auto flex flex-col sm:flex-row items-start sm:items-center gap-2">
+        <div class="absolute bottom-3 left-3 sm:bottom-4 sm:left-4 z-30 pointer-events-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-1.5 sm:gap-2 w-[220px] sm:w-auto">
           <GapInspector bind:isOpen={isGapInspectorOpen} />
           <TopRoutesDrawer />
         </div>

@@ -52,16 +52,17 @@
       onfocus={() => isOpen = true}
       oninput={() => isOpen = true}
       onblur={handleBlur}
-      placeholder="Buscar aeroporto, ICAO, IATA ou cidade..."
-      class="w-full pl-9 pr-8 py-2 text-xs sm:text-sm bg-white/95 dark:bg-dark-surface/95 backdrop-blur border border-gray-200 dark:border-dark-border rounded-xl shadow-md text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gov-blue dark:focus:ring-dark-accent transition-all"
+      placeholder="Buscar aeroporto, ICAO ou cidade..."
+      class="w-full pl-9 pr-9 py-2.5 sm:py-2 text-xs sm:text-sm bg-white/95 dark:bg-dark-surface/95 backdrop-blur border border-gray-200 dark:border-dark-border rounded-xl shadow-md text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gov-blue dark:focus:ring-dark-accent transition-all"
     />
     {#if query}
       <button
         type="button"
         onclick={clearSearch}
-        class="absolute right-2.5 p-1 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors"
+        class="absolute right-2 p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors"
+        title="Limpar busca"
       >
-        <Icon name="x" class="w-3.5 h-3.5" />
+        <Icon name="x" class="w-4 h-4" />
       </button>
     {/if}
   </div>
@@ -72,6 +73,7 @@
       {#each filteredAirports as airport}
         <button
           type="button"
+          onpointerdown={(e) => { e.preventDefault(); handleSelect(airport); }}
           onclick={() => handleSelect(airport)}
           class="w-full text-left px-3.5 py-2.5 hover:bg-gov-blue/5 dark:hover:bg-dark-accent/10 border-b border-gray-100 dark:border-dark-border/50 last:border-0 flex items-center justify-between gap-3 transition-colors group"
         >

@@ -56,20 +56,21 @@
   <button
     type="button"
     onclick={() => { closeAllDrawers(); isOpen = true; }}
-    class="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/95 dark:bg-dark-surface/95 backdrop-blur border border-gray-200 dark:border-dark-border shadow-lg text-xs hover:border-amber-500/50 transition-all text-left group"
+    class="w-full sm:w-auto sm:min-w-[215px] flex items-center gap-2.5 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl bg-white/95 dark:bg-dark-surface/95 backdrop-blur border border-gray-200 dark:border-dark-border shadow-md hover:shadow-lg text-xs hover:border-amber-500/50 transition-all text-left group"
+    title="Exibir pares de capitais desconectadas"
   >
     <div class="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-500 border border-amber-500/30 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
       <Icon name="alertTriangle" class="w-4 h-4" />
     </div>
-    <div>
-      <div class="flex items-center gap-1.5 font-bold text-gray-900 dark:text-white">
-        <span>Desertos de Rota</span>
-        <span class="font-mono text-[10px] px-1 py-0.2 rounded bg-amber-500/20 text-amber-600 dark:text-amber-400 font-bold">
+    <div class="min-w-0 flex-1">
+      <div class="flex items-center justify-between gap-1.5 font-bold text-gray-900 dark:text-white">
+        <span class="truncate">Desertos de Rota</span>
+        <span class="font-mono text-[10px] px-1 py-0.2 rounded bg-amber-500/20 text-amber-600 dark:text-amber-400 font-bold flex-shrink-0">
           {$currentGapsData.capital_gap_percentage}%
         </span>
       </div>
-      <p class="text-[11px] text-gray-500 dark:text-gray-400">
-        {$currentGapsData.capital_pairs_disconnected || 0} pares de capitais sem voo direto
+      <p class="text-[11px] text-gray-500 dark:text-gray-400 truncate">
+        {$currentGapsData.capital_pairs_disconnected || 0} pares sem voo direto
       </p>
     </div>
   </button>

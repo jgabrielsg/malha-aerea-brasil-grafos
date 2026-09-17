@@ -40,20 +40,20 @@
   <button
     type="button"
     onclick={handleOpen}
-    class="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/95 dark:bg-dark-surface/95 backdrop-blur border border-gray-200 dark:border-dark-border shadow-md hover:shadow-lg text-xs hover:border-gov-blue/50 dark:hover:border-dark-accent/50 transition-all text-left group"
+    class="w-full sm:w-auto sm:min-w-[215px] flex items-center gap-2.5 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl bg-white/95 dark:bg-dark-surface/95 backdrop-blur border border-gray-200 dark:border-dark-border shadow-md hover:shadow-lg text-xs hover:border-gov-blue/50 dark:hover:border-dark-accent/50 transition-all text-left group"
     title="Exibir ranking das 10 conexões mais voadas no ano"
   >
     <div class="w-7 h-7 rounded-lg bg-gov-blue/10 dark:bg-dark-accent/15 text-gov-blue dark:text-dark-accent border border-gov-blue/20 dark:border-dark-accent/30 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
       <Icon name="activity" class="w-4 h-4" />
     </div>
-    <div>
-      <div class="flex items-center gap-1.5 font-bold text-gray-900 dark:text-white">
-        <span>Top 10 Rotas</span>
-        <span class="font-mono text-[10px] px-1 py-0.2 rounded bg-gov-blue/15 dark:bg-dark-accent/20 text-gov-blue dark:text-dark-accent font-bold">
+    <div class="min-w-0 flex-1">
+      <div class="flex items-center justify-between gap-1.5 font-bold text-gray-900 dark:text-white">
+        <span class="truncate">Top 10 Rotas</span>
+        <span class="font-mono text-[10px] px-1 py-0.2 rounded bg-gov-blue/15 dark:bg-dark-accent/20 text-gov-blue dark:text-dark-accent font-bold flex-shrink-0">
           {$selectedYear}
         </span>
       </div>
-      <p class="text-[11px] text-gray-500 dark:text-gray-400 truncate max-w-[150px]">
+      <p class="text-[11px] text-gray-500 dark:text-gray-400 truncate">
         {#if $topTenRoutes.length > 0}
           #1 {$topTenRoutes[0].orig} ➔ {$topTenRoutes[0].dest}
         {:else}

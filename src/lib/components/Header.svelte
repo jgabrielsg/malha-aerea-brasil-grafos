@@ -31,6 +31,9 @@
         } else {
           document.documentElement.classList.remove('dark');
         }
+        try {
+          localStorage.setItem('geoflight_theme', next);
+        } catch (e) {}
       }
       return next;
     });
@@ -208,12 +211,12 @@
         <span class="hidden 2xl:inline text-xs font-mono">Exportar</span>
       </button>
 
-      <!-- Link Fonte de Dados ANAC -->
+      <!-- Link Fonte de Dados ANAC (Desktop/Tablet) -->
       <a
         href="https://www.gov.br/anac/pt-br/assuntos/dados-e-estatisticas/historico-de-voos"
         target="_blank"
         rel="noopener noreferrer"
-        class="p-1.5 rounded-lg text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-dark-card transition-colors"
+        class="hidden sm:flex p-1.5 rounded-lg text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-dark-card transition-colors"
         title="Fonte de Dados: Microdados ANAC (VRA)"
       >
         <Icon name="externalLink" class="w-3.5 h-3.5" />
