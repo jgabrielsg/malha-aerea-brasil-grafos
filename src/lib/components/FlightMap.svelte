@@ -549,7 +549,7 @@
     ScatterplotLayer = layersModule.ScatterplotLayer;
     PathLayer = layersModule.PathLayer;
 
-    // Inicialização do MapLibre GL
+    // Inicialização do MapLibre GL com buffer persistente para snapshots PNG
     mapInstance = new maplibregl.Map({
       container: mapContainer,
       style: STYLES[$theme] || STYLES.dark,
@@ -559,15 +559,27 @@
       bearing: 0,
       minZoom: 3,
       maxZoom: 12,
-      attributionControl: false
+      attributionControl: false,
+      preserveDrawingBuffer: true // Permite captura fidedigna de snapshots PNG
     });
+
+    if (typeof window !== 'undefined') {
+      window.__geoflight_map_instance = mapInstance;
+    }
 
     mapInstance.addControl(new maplibregl.NavigationControl({ showCompass: true }), 'bottom-right');
 
     deckOverlay = new MapboxOverlay({
       layers: getLayers(),
-      getTooltip
+      getTooltip,
+      glOptions: {
+        preserveDrawingBuffer: true
+      }
     });
+
+    if (typeof window !== 'undefined') {
+      window.__geoflight_deck_instance = deckOverlay;
+    }
 
     mapInstance.addControl(deckOverlay);
 
@@ -643,5 +655,5 @@
 </script>
 
 <div class="relative w-full h-full overflow-hidden bg-dark-bg">
-  <div bind:this={mapContainer} class="w-full h-full"></div>
+  <div bind:this={mapContainer} id="flight-map-container" class="w-full h-full"></div>
 </div>

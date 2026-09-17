@@ -97,6 +97,62 @@ export function initUrlSync() {
 }
 
 /**
+ * Constrói a URL canônica com todos os filtros ativos de forma imediata e síncrona
+ * @returns {string} URL completa com parâmetros de busca
+ */
+export function buildCurrentUrlString() {
+  if (typeof window === 'undefined') return '';
+
+  try {
+    const params = new URLSearchParams();
+
+    const year = get(selectedYear);
+    if (year !== 2024) params.set('ano', year.toString());
+
+    const freq = get(minFlightThresholdIndex);
+    if (freq !== 3) params.set('freq', freq.toString());
+
+    const dom = get(onlyDomestic);
+    if (!dom) params.set('dom', '0');
+
+    const dist = get(selectedDistanceBracket);
+    if (dist && dist !== 'all') params.set('dist', dist);
+
+    const metric = get(metricMode);
+    if (metric !== 'flights') params.set('metrica', metric);
+
+    const plannerOpen = get(isRoutePlannerOpen);
+    const orig = get(plannedRouteOrigin);
+    const dest = get(plannedRouteDest);
+    if (plannerOpen && orig && dest) {
+      params.set('orig', orig);
+      params.set('dest', dest);
+    } else {
+      const airport = get(selectedAirport);
+      if (airport) params.set('aeroporto', airport);
+
+      const closed = get(simulatedClosedAirport);
+      const resOpen = get(isResilienceMode);
+      if (resOpen && closed) params.set('falha', closed);
+    }
+
+    const queryString = params.toString();
+    const nextPath = queryString 
+      ? `${window.location.pathname}?${queryString}`
+      : window.location.pathname;
+
+    if (window.location.search !== (queryString ? `?${queryString}` : '')) {
+      window.history.replaceState(null, '', nextPath);
+    }
+
+    return `${window.location.origin}${nextPath}`;
+  } catch (err) {
+    console.warn('Erro ao construir URL atual:', err);
+    return window.location.href;
+  }
+}
+
+/**
  * Atualiza os parâmetros na URLSearchParams de forma transparente (sem recarregar página)
  */
 export function syncStateToUrl() {
@@ -105,51 +161,8 @@ export function syncStateToUrl() {
   if (syncTimeout) clearTimeout(syncTimeout);
 
   syncTimeout = setTimeout(() => {
-    try {
-      const params = new URLSearchParams();
-
-      const year = get(selectedYear);
-      if (year !== 2024) params.set('ano', year.toString());
-
-      const freq = get(minFlightThresholdIndex);
-      if (freq !== 3) params.set('freq', freq.toString());
-
-      const dom = get(onlyDomestic);
-      if (!dom) params.set('dom', '0');
-
-      const dist = get(selectedDistanceBracket);
-      if (dist && dist !== 'all') params.set('dist', dist);
-
-      const metric = get(metricMode);
-      if (metric !== 'flights') params.set('metrica', metric);
-
-      const plannerOpen = get(isRoutePlannerOpen);
-      const orig = get(plannedRouteOrigin);
-      const dest = get(plannedRouteDest);
-      if (plannerOpen && orig && dest) {
-        params.set('orig', orig);
-        params.set('dest', dest);
-      } else {
-        const airport = get(selectedAirport);
-        if (airport) params.set('aeroporto', airport);
-
-        const closed = get(simulatedClosedAirport);
-        const resOpen = get(isResilienceMode);
-        if (resOpen && closed) params.set('falha', closed);
-      }
-
-      const queryString = params.toString();
-      const nextUrl = queryString 
-        ? `${window.location.pathname}?${queryString}`
-        : window.location.pathname;
-
-      if (window.location.search !== (queryString ? `?${queryString}` : '')) {
-        window.history.replaceState(null, '', nextUrl);
-      }
-    } catch (err) {
-      console.warn('Erro ao atualizar URLSearchParams:', err);
-    }
-  }, 350);
+    buildCurrentUrlString();
+  }, 250);
 }
 
 /**
@@ -158,8 +171,9 @@ export function syncStateToUrl() {
 export async function copyShareUrl() {
   if (typeof window === 'undefined') return;
 
-  // Garante que o estado mais recente esteja refletido na URL antes de copiar
-  const fullUrl = window.location.href;
+  // Cancela debounce pendente e obtém a URL 100% atualizada de forma síncrona
+  if (syncTimeout) clearTimeout(syncTimeout);
+  const fullUrl = buildCurrentUrlString();
 
   try {
     if (navigator.clipboard && navigator.clipboard.writeText) {

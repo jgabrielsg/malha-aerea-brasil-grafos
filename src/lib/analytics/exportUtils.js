@@ -14,18 +14,28 @@
  */
 export async function captureMapSnapshot(mapInstance, mapContainer, meta = {}) {
   try {
-    if (!mapInstance || !mapContainer) {
-      console.warn('Instância ou contêiner do mapa indisponível para captura.');
+    const container = mapContainer 
+      || (typeof document !== 'undefined' ? (document.getElementById('flight-map-container') || document.querySelector('.maplibregl-map') || document.querySelector('canvas')?.parentElement) : null);
+    const instance = mapInstance 
+      || (typeof window !== 'undefined' ? window.__geoflight_map_instance : null);
+
+    if (!container) {
+      console.warn('Contêiner do mapa indisponível para captura.');
       return false;
     }
 
-    // Força uma renderização síncrona imediata para atualizar os buffers de desenho
-    mapInstance.triggerRepaint();
+    // Força uma renderização síncrona imediata para atualizar os buffers de desenho no MapLibre e Deck.gl
+    if (instance?.triggerRepaint) {
+      instance.triggerRepaint();
+    }
+    if (typeof window !== 'undefined' && window.__geoflight_deck_instance?.setProps) {
+      window.__geoflight_deck_instance.setProps({});
+    }
 
     // Aguarda próximo quadro de animação para garantir que WebGL esteja desenhado
-    await new Promise(resolve => requestAnimationFrame(() => setTimeout(resolve, 50)));
+    await new Promise(resolve => requestAnimationFrame(() => setTimeout(resolve, 80)));
 
-    const canvases = Array.from(mapContainer.querySelectorAll('canvas'));
+    const canvases = Array.from(container.querySelectorAll('canvas'));
     if (canvases.length === 0) {
       console.warn('Nenhum canvas WebGL encontrado.');
       return false;
@@ -45,7 +55,9 @@ export async function captureMapSnapshot(mapInstance, mapContainer, meta = {}) {
     // 1. Desenha as camadas WebGL (MapLibre e eventuais overlays do Deck.gl)
     canvases.forEach(canvas => {
       try {
-        ctx.drawImage(canvas, 0, 0, width, height);
+        if (canvas.width > 0 && canvas.height > 0) {
+          ctx.drawImage(canvas, 0, 0, width, height);
+        }
       } catch (err) {
         console.error('Falha ao desenhar camada do canvas:', err);
       }
@@ -107,11 +119,23 @@ export async function captureMapSnapshot(mapInstance, mapContainer, meta = {}) {
     ctx.fillStyle = '#38bdf8';
     ctx.fillText('geoflight.br', rightMargin, bannerY + bannerHeight * 0.72);
 
-    // 3. Converte para Blob e dispara o download
+    // 3. Converte para Blob ou DataURL e dispara o download
     return new Promise(resolve => {
       offscreen.toBlob(blob => {
         if (!blob) {
-          resolve(false);
+          try {
+            const dataUrl = offscreen.toDataURL('image/png');
+            const a = document.createElement('a');
+            a.href = dataUrl;
+            a.download = `geoflight-br-mapa-${meta.year || 'analise'}.png`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            resolve(true);
+          } catch (e) {
+            console.error('Fallback toDataURL falhou:', e);
+            resolve(false);
+          }
           return;
         }
         const url = URL.createObjectURL(blob);

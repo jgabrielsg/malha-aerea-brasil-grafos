@@ -17,11 +17,14 @@
   function toggle3D() {
     is3DMode.update(current => {
       const next = !current;
-      // Ajusta imediatamente a câmera para o novo modo
-      if (next) {
-        cameraTarget.set([-52.0, -14.5, 4.2, 45, 16]);
+      if (typeof window !== 'undefined' && window.__geoflight_map_instance) {
+        window.__geoflight_map_instance.easeTo({
+          pitch: next ? 45 : 0,
+          bearing: next ? 16 : 0,
+          duration: 1000
+        });
       } else {
-        cameraTarget.set([-52.0, -14.5, 4.2, 0, 0]);
+        cameraTarget.set([-52.0, -14.5, 4.2, next ? 45 : 0, next ? 16 : 0]);
       }
       return next;
     });

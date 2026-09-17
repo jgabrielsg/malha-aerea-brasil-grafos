@@ -4,6 +4,7 @@
     selectedYear, 
     minFlightThresholdIndex, 
     onlyDomestic,
+    selectedDistanceBracket,
     FREQUENCY_LEVELS,
     selectedAirport,
     activePlannedRoute
@@ -26,12 +27,15 @@
     if (typeof document === 'undefined') return;
 
     isCapturing = true;
-    const mapContainer = document.getElementById('flight-map-container');
-    const mapInstance = window.__geoflight_map_instance;
+    const mapContainer = document.getElementById('flight-map-container') 
+      || document.querySelector('.maplibregl-map') 
+      || document.querySelector('canvas')?.parentElement;
+    const mapInstance = typeof window !== 'undefined' ? window.__geoflight_map_instance : null;
 
     const freqLevel = FREQUENCY_LEVELS[$minFlightThresholdIndex]?.label || '';
-    const domText = $onlyDomestic ? 'Apenas Doméstico' : 'Malha Nacional + Internacional';
-    const filterSummary = `Limiar: ${freqLevel} • ${domText}`;
+    const domText = $onlyDomestic ? 'Apenas BR' : 'Malha Completa';
+    const distText = $selectedDistanceBracket === 'short' ? '< 600km' : $selectedDistanceBracket === 'medium' ? '600–1.5k km' : $selectedDistanceBracket === 'long' ? '> 1.500km' : 'Todas distâncias';
+    const filterSummary = `Limiar: ${freqLevel} • ${domText} • ${distText}`;
 
     let focusedDetail = '';
     if ($activePlannedRoute) {
@@ -57,8 +61,9 @@
 
   function handleExportRoutes() {
     const freqLevel = FREQUENCY_LEVELS[$minFlightThresholdIndex]?.label || '';
-    const domText = $onlyDomestic ? 'Apenas Doméstico' : 'Todas';
-    const summary = `Ano ${$selectedYear} • Limiar: ${freqLevel} • ${domText}`;
+    const domText = $onlyDomestic ? 'Apenas BR' : 'Todas';
+    const distText = $selectedDistanceBracket === 'short' ? '< 600km' : $selectedDistanceBracket === 'medium' ? '600–1.5k km' : $selectedDistanceBracket === 'long' ? '> 1.500km' : 'Todas distâncias';
+    const summary = `Ano ${$selectedYear} • Limiar: ${freqLevel} • ${domText} • ${distText}`;
 
     exportRoutesToCsv($currentRoutes, $selectedYear, summary);
     closeModal();
@@ -165,13 +170,31 @@
             </div>
           </div>
 
+          <!-- Aviso Informativo sobre Filtros Ativos -->
+          <div class="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-emerald-800 dark:text-emerald-300 text-[11px] flex items-start gap-1.5 leading-relaxed">
+            <Icon name="info" class="w-3.5 h-3.5 flex-shrink-0 text-emerald-600 dark:text-emerald-400 mt-0.5" />
+            <div>
+              <span class="font-bold">Filtros ativos são aplicados:</span> O download respeita rigorosamente os filtros da sua visualização:
+              <div class="mt-1 flex flex-wrap gap-1 font-mono text-[10px]">
+                <span class="px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-900 dark:text-emerald-200">Ano: {$selectedYear}</span>
+                <span class="px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-900 dark:text-emerald-200">{FREQUENCY_LEVELS[$minFlightThresholdIndex]?.label || 'Freq'} mín.</span>
+                <span class="px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-900 dark:text-emerald-200">{$onlyDomestic ? 'Apenas BR' : 'Todas'}</span>
+                {#if $selectedDistanceBracket !== 'all'}
+                  <span class="px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-900 dark:text-emerald-200">
+                    {$selectedDistanceBracket === 'short' ? '< 600km' : $selectedDistanceBracket === 'medium' ? '600–1.5k km' : '> 1.500km'}
+                  </span>
+                {/if}
+              </div>
+            </div>
+          </div>
+
           <button
             type="button"
             onclick={handleExportRoutes}
-            class="w-full mt-1 py-2 px-3 rounded-lg bg-gray-900 hover:bg-black dark:bg-dark-card dark:hover:bg-dark-border text-white text-xs font-mono font-bold transition-colors flex items-center justify-center gap-2 border border-gray-300 dark:border-dark-border"
+            class="w-full mt-1 py-2 px-3 rounded-lg bg-gray-900 hover:bg-black dark:bg-dark-card dark:hover:bg-dark-border text-white text-xs font-mono font-bold transition-colors flex items-center justify-center gap-2 border border-gray-300 dark:border-dark-border shadow-sm"
           >
             <Icon name="download" class="w-3.5 h-3.5" />
-            <span>Baixar CSV ({$selectedYear})</span>
+            <span>Baixar CSV ({$currentRoutes?.length || 0} rotas)</span>
           </button>
         </div>
 

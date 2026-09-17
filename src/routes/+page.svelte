@@ -12,6 +12,7 @@
   import FilterToolbar from '$lib/components/FilterToolbar.svelte';
   import RoutePlanner from '$lib/components/RoutePlanner.svelte';
   import TopRoutesDrawer from '$lib/components/TopRoutesDrawer.svelte';
+  import CameraHUD from '$lib/components/CameraHUD.svelte';
   import KeyboardShortcutsModal from '$lib/components/KeyboardShortcutsModal.svelte';
   import ExportModal from '$lib/components/ExportModal.svelte';
   import { isLoading, loadError } from '$lib/stores/dataStore.js';
@@ -20,6 +21,7 @@
     selectedYear,
     minFlightThresholdIndex,
     onlyDomestic,
+    selectedDistanceBracket,
     metricMode,
     isResilienceMode, 
     isStoryMode, 
@@ -85,7 +87,19 @@
       cameraTarget.set([-52.0, -14.5, 4.2, $is3DMode ? 32 : 0, 0]);
     } else if (key === 't' || key === 'T') {
       event.preventDefault();
-      is3DMode.update(m => !m);
+      is3DMode.update(current => {
+        const next = !current;
+        if (typeof window !== 'undefined' && window.__geoflight_map_instance) {
+          window.__geoflight_map_instance.easeTo({
+            pitch: next ? 45 : 0,
+            bearing: next ? 16 : 0,
+            duration: 1000
+          });
+        } else {
+          cameraTarget.set([-52.0, -14.5, 4.2, next ? 45 : 0, next ? 16 : 0]);
+        }
+        return next;
+      });
     } else if (key === 'Escape') {
       closeAllDrawers();
       isGapInspectorOpen = false;
@@ -114,6 +128,7 @@
     const _y = $selectedYear;
     const _f = $minFlightThresholdIndex;
     const _d = $onlyDomestic;
+    const _dist = $selectedDistanceBracket;
     const _m = $metricMode;
     const _a = $selectedAirport;
     const _p = $isRoutePlannerOpen;
@@ -187,6 +202,11 @@
           <GapInspector bind:isOpen={isGapInspectorOpen} />
           <TopRoutesDrawer />
         </div>
+      {/if}
+
+      <!-- Controles de Câmera HUD (Reset Brasil, 2D/3D, Snapshot, Tela Cheia, Atalhos) -->
+      {#if !$isStoryMode}
+        <CameraHUD />
       {/if}
 
       <!-- Modal de Narrativa Histórica Guiada (Story Mode) -->
